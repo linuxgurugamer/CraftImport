@@ -1,0 +1,20 @@
+﻿<Properties StartupItem="CraftImport.csproj">
+  <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" />
+  <MonoDevelop.Ide.Workbench ActiveDocument="src\gui\CI_gui.cs">
+    <Files>
+      <File FileName="src\util\Configuration.cs" Line="36" Column="4" />
+      <File FileName="craftimport.version" Line="1" Column="1" />
+      <File FileName="src\CI.cs" Line="1" Column="1" />
+      <File FileName="src\gui\CI_gui.cs" Line="438" Column="34" />
+      <File FileName="src\util\FileOperations.cs" Line="78" Column="2" />
+      <File FileName="src\util\UIClass.cs" Line="1" Column="1" />
+      <File FileName="src\gui\FileBrowser.cs" Line="221" Column="30" />
+    </Files>
+  </MonoDevelop.Ide.Workbench>
+  <MonoDevelop.Ide.DebuggingService.Breakpoints>
+    <BreakpointStore>
+      <Breakpoint file="D:\Users\jbb\github\AutomatedScreenshots\AutomatedScreenshots\src\AutomatedScreenshots_ToolbarButtons.cs" line="83" column="1" />
+    </BreakpointStore>
+  </MonoDevelop.Ide.DebuggingService.Breakpoints>
+  <MonoDevelop.Ide.DebuggingService.PinnedWatches />
+</Properties>
