@@ -80,8 +80,13 @@
     <None Include="README.md" />
     <None Include="buildRelease.bat" />
     <None Include="ChangeLog.txt" />
-    <None Include="src\Textures\Auto-24.png" />
-    <None Include="src\Textures\Auto-38.png" />
     <None Include="craftimport.version" />
+    <None Include="src\Textures\CI-24.png" />
+    <None Include="src\Textures\CI-38.png" />
+    <None Include="src\Textures\CI_back.png" />
+    <None Include="src\Textures\CI_drive.png" />
+    <None Include="src\Textures\orig_CI.png" />
+    <None Include="src\Textures\CI-folder.png" />
+    <None Include="src\Textures\CI-file.png" />
   </ItemGroup>
 </Project>

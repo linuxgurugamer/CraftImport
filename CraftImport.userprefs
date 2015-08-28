@@ -1,14 +1,15 @@
 ﻿<Properties StartupItem="CraftImport.csproj">
   <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" />
-  <MonoDevelop.Ide.Workbench ActiveDocument="src\gui\CI_gui.cs">
+  <MonoDevelop.Ide.Workbench ActiveDocument="craftimport.version">
     <Files>
       <File FileName="src\util\Configuration.cs" Line="36" Column="4" />
-      <File FileName="craftimport.version" Line="1" Column="1" />
+      <File FileName="craftimport.version" Line="10" Column="12" />
       <File FileName="src\CI.cs" Line="1" Column="1" />
-      <File FileName="src\gui\CI_gui.cs" Line="438" Column="34" />
-      <File FileName="src\util\FileOperations.cs" Line="78" Column="2" />
-      <File FileName="src\util\UIClass.cs" Line="1" Column="1" />
-      <File FileName="src\gui\FileBrowser.cs" Line="221" Column="30" />
+      <File FileName="src\gui\CI_gui.cs" Line="99" Column="66" />
+      <File FileName="src\gui\FileBrowser.cs" Line="352" Column="15" />
+      <File FileName="ChangeLog.txt" Line="1" Column="1" />
+      <File FileName="README.md" Line="3" Column="2" />
+      <File FileName="buildRelease.bat" Line="51" Column="23" />
     </Files>
   </MonoDevelop.Ide.Workbench>
   <MonoDevelop.Ide.DebuggingService.Breakpoints>

@@ -1,10 +1,7 @@
-﻿
-using System.Collections.Generic;
-
-using System;
+﻿using System;
 using UnityEngine;
 using System.IO;
-
+using System.Collections.Generic;
 
 
 namespace CraftImport
@@ -128,10 +125,14 @@ namespace CraftImport
 				return m_filePattern;
 			}
 			set {
+				Log.Info ("SelectionPattern");
 				m_filePattern = value;
 				ReadDirectoryContents();
+				Log.Info ("SelectionPattern end");
 			}
+
 		}
+
 		protected string m_filePattern;
 
 		// Optional image for directories
@@ -160,13 +161,17 @@ namespace CraftImport
 
 		// Browser type. Defaults to File, but can be set to Folder
 		public FileBrowserType BrowserType {
+			
 			get {
 				return m_browserType;
 			}
 			set {
+				Log.Info("BrowserType");
 				m_browserType = value;
 				ReadDirectoryContents();
+				Log.Info("BrowserType end");
 			}
+
 		}
 		protected FileBrowserType m_browserType;
 		protected string m_newDirectory;
@@ -224,12 +229,15 @@ namespace CraftImport
 
 		protected void SwitchDirectoryNow() {
 			if (m_newDirectory == null || m_currentDirectory == m_newDirectory) {
+				Log.Info ("SwitchDirectoryNow return");
 				return;
 			}
 			m_currentDirectory = m_newDirectory;
 			m_scrollPosition = Vector2.zero;
 			m_selectedDirectory = m_selectedNonMatchingDirectory = m_selectedFile = -1;
+			Log.Info ("SwitchDirectoryNow");
 			ReadDirectoryContents();
+			Log.Info ("SwitchDirectoryNow end");
 		}
 
 		protected void ReadDirectoryContents() {
@@ -316,6 +324,7 @@ namespace CraftImport
 			Array.Sort(m_files);
 			BuildContent();
 			m_newDirectory = null;
+			Log.Info ("ReadDirectoryContents end");
 		}
 
 		protected void BuildContent() {
@@ -338,7 +347,13 @@ namespace CraftImport
 			}
 		}
 
-		public void OnGUI() {
+		public void OnGUI(int id) {
+			Log.Info ("OnGUI");
+			Window (0);
+		}
+		private void Window(int id) {
+			Log.Info ("Window");
+
 			GUILayout.BeginArea(
 				m_screenRect,
 				m_name,
@@ -449,6 +464,7 @@ namespace CraftImport
 			}
 			GUI.enabled = true;
 			GUILayout.EndHorizontal();
+
 			GUILayout.EndArea();
 
 			if (Event.current.type == EventType.Repaint) {

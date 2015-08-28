@@ -10,6 +10,9 @@ namespace CraftImport
 	{
 		private const int WIDTH = 500;
 		private const int HEIGHT = 175;
+		private const int BR_WIDTH=600;
+		private const int BR_HEIGHT = 500;
+
 		private Rect bounds = new Rect (Screen.width / 2 - WIDTH / 2, Screen.height / 2 - HEIGHT / 2, WIDTH, HEIGHT);
 		private /* volatile*/ bool visible = false;
 		// Stock APP Toolbar - Stavell
@@ -93,8 +96,8 @@ namespace CraftImport
 			if (!CI_Texture_Load) {
 				if (GameDatabase.Instance.ExistsTexture (CI.TEXTURE_DIR + "CI-38"))
 					CI_button_img = GameDatabase.Instance.GetTexture (CI.TEXTURE_DIR + "CI-38", false);
-				//if (GameDatabase.Instance.ExistsTexture (CI.TEXTURE_DIR + "folder"))
-				//	CI_button_off = GameDatabase.Instance.GetTexture (CI.TEXTURE_DIR + "folder", false);
+				//if (GameDatabase.Instance.ExistsTexture (CI.TEXTURE_DIR + "CI-folder"))
+				//	CI_button_off = GameDatabase.Instance.GetTexture (CI.TEXTURE_DIR + "CI-folder", false);
 				
 
 				CI_Texture_Load = true;
@@ -223,8 +226,8 @@ namespace CraftImport
 		/// </summary>
 		protected string m_textPath;
 
-		static protected FileBrowser m_fileBrowser = null;
-		static bool fileBrowserEnabled = false;
+		 protected FileBrowser m_fileBrowser = null;
+		 bool fileBrowserEnabled = false;
 
 		[SerializeField]
 		protected Texture2D m_directoryImage,
@@ -234,38 +237,49 @@ namespace CraftImport
 		 void getFile ()
 		{
 			GUILayout.BeginHorizontal ();
-			GUILayout.Label ("Select Craft File", GUILayout.Width (100));
-			GUILayout.FlexibleSpace ();
+			GUILayout.Label ("Select Craft File: ", GUILayout.Width (100));
+			//GUILayout.FlexibleSpace ();
+
 			GUILayout.Label (m_textPath ?? "none selected");
 			fileBrowserEnabled = true;
+			GUILayout.FlexibleSpace ();
 			//if (!m_directoryImage) Log.Info ("getFile 1 m_directoryImage is null");
 			if (GUILayout.Button ("...", GUILayout.ExpandWidth (false))) {
-//				Log.Info ("creating m_fileBrowser");
+				Log.Info ("creating m_fileBrowser");
 
 				m_fileBrowser = new FileBrowser (
-					new Rect (100, 100, 600, 500),
+					new Rect (Screen.width / 2 - BR_WIDTH / 2, Screen.height / 2 - BR_HEIGHT / 2, BR_WIDTH, BR_HEIGHT),
 					"Choose Craft File",
 					FileSelectedCallback
 				);
 
 				if (!m_directoryImage) {
 					m_directoryImage = new Texture2D (38, 38, TextureFormat.ARGB32, false);
-					if (GameDatabase.Instance.ExistsTexture (CI.TEXTURE_DIR + "folder"))
-						m_directoryImage = GameDatabase.Instance.GetTexture (CI.TEXTURE_DIR + "folder", false);
+					if (GameDatabase.Instance.ExistsTexture (CI.TEXTURE_DIR + "CI-folder"))
+						m_directoryImage = GameDatabase.Instance.GetTexture (CI.TEXTURE_DIR + "CI-folder", false);
 				}
 				if (!m_fileImage) {
 					m_fileImage =  new Texture2D (38, 38, TextureFormat.ARGB32, false);
-					if (GameDatabase.Instance.ExistsTexture (CI.TEXTURE_DIR + "file"))
-						m_fileImage = GameDatabase.Instance.GetTexture (CI.TEXTURE_DIR + "file", false);
+					if (GameDatabase.Instance.ExistsTexture (CI.TEXTURE_DIR + "CI-file"))
+						m_fileImage = GameDatabase.Instance.GetTexture (CI.TEXTURE_DIR + "CI-file", false);
 				}
-
+				if (m_fileBrowser != null)
+					Log.Info("1 m_fileBrowser not null");
 				m_fileBrowser.SelectionPattern = "*.craft";
 				m_fileBrowser.DirectoryImage = m_directoryImage;
 				m_fileBrowser.FileImage = m_fileImage;
 				if (m_textPath != "")
 					m_fileBrowser.SetNewDirectory(m_textPath);
+				Log.Info ("m_fileBrowser setup completed");
+				if (m_fileBrowser != null)
+					Log.Info("2 m_fileBrowser not null");
 			}
-
+			if (m_fileBrowser != null)
+				Log.Info("3 m_fileBrowser not null");
+			GUILayout.FlexibleSpace ();
+			GUILayout.EndHorizontal ();
+			GUILayout.BeginHorizontal ();
+			GUILayout.Label (" ");
 			GUILayout.EndHorizontal ();
 			GUILayout.BeginHorizontal ();
 			if (GUILayout.Button ("OK", GUILayout.Width (125.0f))) {;
@@ -283,11 +297,14 @@ namespace CraftImport
 				//m_fileBrowser = null;
 			}
 			GUILayout.EndHorizontal ();
+			GUI.DragWindow ();
+			if (m_fileBrowser != null)
+				Log.Info("m_fileBrowser not null");
 		}
 
 		protected void FileSelectedCallback (string path)
 		{
-//			Log.Info ("FileSelectedCallback");
+			Log.Info ("FileSelectedCallback");
 			m_fileBrowser = null;
 			fileBrowserEnabled = false;
 
@@ -300,27 +317,13 @@ namespace CraftImport
 		public void OnGUI ()
 		{
 			if (m_fileBrowser != null) {
+				Log.Info ("m_fileBrowser not null");
+				Log.Info ("fileBrowserEnabled: " + fileBrowserEnabled.ToString());
 				if (!fileBrowserEnabled) {
+					
 					m_fileBrowser = null;
 					downloadState = downloadStateType.GUI;
 				} else {
-					// For some reason, the following code, which does load the images
-					// doesn't work in the getFile;  In the getFile() function, the images are
-					// still null, so I moved this code into that
-					#if false
-				if (!m_directoryImage) {
-					Log.Info ("Loading m_directoryImage");
-					m_directoryImage = new Texture2D (38, 38, TextureFormat.ARGB32, false);
-					if (GameDatabase.Instance.ExistsTexture (CI.TEXTURE_DIR + "folder"))
-						m_directoryImage = GameDatabase.Instance.GetTexture (CI.TEXTURE_DIR + "folder", false);
-				}
-				if (!m_fileImage) {
-					Log.Info ("Loading m_fileImage");
-					m_fileImage =  new Texture2D (38, 38, TextureFormat.ARGB32, false);
-					if (GameDatabase.Instance.ExistsTexture (CI.TEXTURE_DIR + "file"))
-						m_fileImage = GameDatabase.Instance.GetTexture (CI.TEXTURE_DIR + "file", false);
-				}
-					#endif
 
 				//	GUI.skin = HighLogic.Skin;
 		
@@ -337,13 +340,13 @@ namespace CraftImport
 
 					GUI.skin.customStyles [0] = s;
 
-					m_fileBrowser.OnGUI ();
+					m_fileBrowser.OnGUI (GetInstanceID ());
 					return;
 				}
 			}
 			try {
 				if (this.Visible ()) {
-					this.bounds = GUILayout.Window (this.GetInstanceID (), this.bounds, this.Window, CI.TITLE, HighLogic.Skin.window);
+					this.bounds = GUILayout.Window (GetInstanceID (), this.bounds, this.Window, CI.TITLE, HighLogic.Skin.window);
 				}
 			} catch (Exception e) {
 				Log.Error ("exception: " + e.Message);
@@ -414,24 +417,17 @@ namespace CraftImport
 				GUILayout.EndHorizontal ();
 
 				GUILayout.BeginHorizontal ();
-				GUILayout.Label ("Use Blizzy Toolbar if available:");
-				GUILayout.FlexibleSpace ();
-				newUseBlizzyToolbar = GUILayout.Toggle (newUseBlizzyToolbar, "");
+				GUILayout.Label (" ");
 				GUILayout.EndHorizontal ();
-				if (Application.platform == RuntimePlatform.WindowsPlayer) {
-					GUILayout.BeginHorizontal ();
-					GUILayout.Label ("Show drive letters:");
-					GUILayout.FlexibleSpace ();
-					newShowDrives = GUILayout.Toggle (newShowDrives, "");
-					GUILayout.EndHorizontal ();
-				}
+
 
 				GUILayout.BeginHorizontal ();
 				if (GUILayout.Button ("Select Local File", GUILayout.Width (125.0f))) {
 					Log.Info ("Selecting Local File");
 					downloadState = downloadStateType.FILESELECTION;
-					//var path = Editor
-					//newCraftName = 
+
+					if (m_textPath.Contains(".craft"))
+						m_textPath = System.IO.Path.GetDirectoryName(m_textPath);
 				}
 				GUILayout.EndHorizontal ();
 
@@ -451,6 +447,28 @@ namespace CraftImport
 				}
 
 				GUILayout.EndHorizontal ();
+
+				GUILayout.BeginHorizontal ();
+				GUILayout.Label (" ");
+				GUILayout.EndHorizontal ();
+
+				GUILayout.BeginHorizontal ();
+				DrawTitle ("Options");
+				GUILayout.EndHorizontal ();
+
+				GUILayout.BeginHorizontal ();
+				GUILayout.Label ("Use Blizzy Toolbar if available:");
+				GUILayout.FlexibleSpace ();
+				newUseBlizzyToolbar = GUILayout.Toggle (newUseBlizzyToolbar, "");
+				GUILayout.EndHorizontal ();
+				if (Application.platform == RuntimePlatform.WindowsPlayer) {
+					GUILayout.BeginHorizontal ();
+					GUILayout.Label ("Show drive letters:");
+					GUILayout.FlexibleSpace ();
+					newShowDrives = GUILayout.Toggle (newShowDrives, "");
+					GUILayout.EndHorizontal ();
+				}
+
 				break;
 
 //			case downloadStateType.FILESELECTION:
@@ -539,6 +557,7 @@ namespace CraftImport
 				break;
 			}
 			GUILayout.EndVertical ();
+			GUI.DragWindow ();
 		}
 
 		private void DrawTitle (String text)
