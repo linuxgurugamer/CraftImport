@@ -10,7 +10,7 @@ namespace CraftImport
 	{
 		private const int WIDTH = 500;
 		private const int HEIGHT = 175;
-		private const int BR_WIDTH=600;
+		private const int BR_WIDTH = 600;
 		private const int BR_HEIGHT = 500;
 
 		private Rect bounds = new Rect (Screen.width / 2 - WIDTH / 2, Screen.height / 2 - HEIGHT / 2, WIDTH, HEIGHT);
@@ -27,7 +27,7 @@ namespace CraftImport
 		//		private static bool newScreenshotAtIntervals = true;
 		private static bool blizzyToolbarInstalled = false;
 		private static bool newUseBlizzyToolbar;
-		private static bool newShowDrives;
+		//private static bool newShowDrives;
 		private static bool saveInSandbox = false;
 		private static bool overwriteExisting = false;
 		private static bool appLaucherHidden = true;
@@ -42,8 +42,9 @@ namespace CraftImport
 			INPROGRESS,
 			COMPLETED,
 			FILEEXISTS,
-			ERROR
-		};
+			ERROR}
+
+		;
 
 		private static downloadStateType downloadState = downloadStateType.INACTIVE;
 		private static string downloadErrorMessage;
@@ -89,9 +90,8 @@ namespace CraftImport
 
 		private void UpdateToolbarStock ()
 		{
-			Log.Info ("UpdateToolbarStock, appLaucherHidden: " + appLaucherHidden.ToString ());
-			if (CI_Button != null)
-				Log.Info ("CI_Button not null");
+			//Log.Info ("UpdateToolbarStock, appLaucherHidden: " + appLaucherHidden.ToString ());
+
 			// Create the button in the KSP AppLauncher
 			if (!CI_Texture_Load) {
 				if (GameDatabase.Instance.ExistsTexture (CI.TEXTURE_DIR + "CI-38"))
@@ -103,21 +103,18 @@ namespace CraftImport
 				CI_Texture_Load = true;
 			}
 			if (CI_Button == null && !appLaucherHidden) {
-				Log.Info ("CI_Button == null");
 				
 				CI_Button = ApplicationLauncher.Instance.AddModApplication (GUIToggle, GUIToggle,
 					null, null,
 					null, null,
 					ApplicationLauncher.AppScenes.SPACECENTER | ApplicationLauncher.AppScenes.SPH | ApplicationLauncher.AppScenes.VAB,
 					CI_button_img);
-				Log.Info ("Added");
 				stockToolBarcreated = true;
 			}
 		}
 
 		private void HideToolbarStock ()
 		{
-			Log.Info ("HideToolbarStock");
 			ApplicationLauncher.Instance.RemoveModApplication (MainMenuGui.CI_Button);
 			Destroy (CI_Button); // Is this necessary?
 			CI_Button = null;
@@ -145,48 +142,58 @@ namespace CraftImport
 			}
 			//string saveDir = KSPUtil.ApplicationRootPath + sandbox + HighLogic.SaveFolder + "/ships";
 			string saveFile = "";
-			Log.Info ("dir: " + saveDir);
-			var s = Regex.Match (craftFile, "^ship.*=.*");
-			s = Regex.Match (s.ToString (), "=.*");
 
-			string shipName = s.ToString ().Remove (0, 1).Trim ();
-			var t = Regex.Match (craftFile, "type.*=.*");
-			Log.Info ("regex: " + t.ToString ());
-			Log.Info ("t: " + t);
-			bool vab = t.ToString ().Contains ("VAB");
-			bool sph = t.ToString ().Contains ("SPH");
+			string shipName = null;
+			Match t = null;
+			try {
+				var s = Regex.Match (craftFile, "^ship.*=.*");
+				s = Regex.Match (s.ToString (), "=.*");
 
-			string strCraftFile = craftFile.ToString ();
-			if (newCraftName != "") {
-				Log.Info ("shipName: " + shipName + "     newCraftName: " + newCraftName);
-				strCraftFile = strCraftFile.Replace (shipName, newCraftName);
-				shipName = newCraftName;
-			}
+				shipName = s.ToString ().Remove (0, 1).Trim ();
 
-			if (vab) {
-				saveFile = saveDir + "/VAB/" + shipName + ".craft";
-			}
-			if (sph) {
-				saveFile = saveDir + "/SPH/" + shipName + ".craft";
-			}
+				t = Regex.Match (craftFile, "type.*=.*");
+			
+				//Log.Info ("regex: " + t.ToString ());
+				bool vab = t.ToString ().Contains ("VAB");
+				bool sph = t.ToString ().Contains ("SPH");
+
+				string strCraftFile = craftFile.ToString ();
+				if (newCraftName != "") {
+					strCraftFile = strCraftFile.Replace (shipName, newCraftName);
+					shipName = newCraftName;
+				}
+
+				if (vab) {
+					saveFile = saveDir + "/VAB/" + shipName + ".craft";
+				}
+				if (sph) {
+					saveFile = saveDir + "/SPH/" + shipName + ".craft";
+				}
 
 
-			if (System.IO.File.Exists (saveFile) && !overwriteExisting) {
-				downloadState = downloadStateType.FILEEXISTS;
+				if (System.IO.File.Exists (saveFile) && !overwriteExisting) {
+					downloadState = downloadStateType.FILEEXISTS;
+					return;
+				}
+
+				System.IO.File.WriteAllText (saveFile, strCraftFile);
+				downloadState = downloadStateType.COMPLETED;
+			} catch (Exception e) { 
+				Log.Info ("Regex error: " + e);
+
+				//downloadErrorMessage = download.error;
+				downloadErrorMessage = "Download URL did not specify a valid .craft file";
+				downloadState = downloadStateType.ERROR;
 				return;
 			}
-
-			System.IO.File.WriteAllText (saveFile, strCraftFile);
-			downloadState = downloadStateType.COMPLETED;
 		}
+
+		WWW download;
 
 		System.Collections.IEnumerator doDownloadCraft (string craftURL)
 		{
-			Log.Info ("doDownloadCraft   craftURL: " + craftURL);
 			if (craftURL != "") {
 				string s = System.Uri.EscapeUriString (craftURL);
-				Log.Info ("Import started");
-				Log.Info (" Escaped craftURL: " + s);
 
 				// some simple error checking
 				if (!s.StartsWith ("http://") && !s.StartsWith ("https://") && !s.StartsWith ("ftp://") && !s.StartsWith ("file://")) {
@@ -194,9 +201,8 @@ namespace CraftImport
 					downloadState = downloadStateType.ERROR;
 					yield break;
 				}
-
 				// Create a download object
-				var download = new WWW (s);
+				download = new WWW (s);
 				// Wait until the download is done
 				yield   return download;
 				if (!String.IsNullOrEmpty (download.error)) {
@@ -211,12 +217,13 @@ namespace CraftImport
 					overwriteExisting = false;
 					//downloadState = downloadStateType.COMPLETED;
 				}
+				download.Dispose ();
+				download = null;
 			}
 		}
 
 		void downloadCraft (string craftURL)
 		{
-			Log.Info ("downloadCraft");
 			downloadState = downloadStateType.INPROGRESS;
 			StartCoroutine (doDownloadCraft (craftURL));
 		}
@@ -226,53 +233,56 @@ namespace CraftImport
 		/// </summary>
 		protected string m_textPath;
 
-		 protected FileBrowser m_fileBrowser = null;
-		 bool fileBrowserEnabled = false;
+		protected FileBrowser m_fileBrowser = null;
+		bool fileBrowserEnabled = false;
 
 		[SerializeField]
 		protected Texture2D m_directoryImage,
 			m_fileImage;
 
 
-		 void getFile ()
+		void getFile ()
 		{
+			fileBrowserEnabled = true;
+			#if false
 			GUILayout.BeginHorizontal ();
 			GUILayout.Label ("Select Craft File: ", GUILayout.Width (100));
 			//GUILayout.FlexibleSpace ();
 
 			GUILayout.Label (m_textPath ?? "none selected");
-			fileBrowserEnabled = true;
+
 			GUILayout.FlexibleSpace ();
 			//if (!m_directoryImage) Log.Info ("getFile 1 m_directoryImage is null");
-			if (GUILayout.Button ("...", GUILayout.ExpandWidth (false))) {
+			if (GUILayout.Button ("  ...    ", GUILayout.ExpandWidth (false))) {
 				Log.Info ("creating m_fileBrowser");
+			#endif
+			m_fileBrowser = new FileBrowser (
+				new Rect (Screen.width / 2 - BR_WIDTH / 2, Screen.height / 2 - BR_HEIGHT / 2, BR_WIDTH, BR_HEIGHT),
+				"Choose Craft File",
+				FileSelectedCallback
+			);
 
-				m_fileBrowser = new FileBrowser (
-					new Rect (Screen.width / 2 - BR_WIDTH / 2, Screen.height / 2 - BR_HEIGHT / 2, BR_WIDTH, BR_HEIGHT),
-					"Choose Craft File",
-					FileSelectedCallback
-				);
+			if (!m_directoryImage) {
+				m_directoryImage = new Texture2D (38, 38, TextureFormat.ARGB32, false);
+				if (GameDatabase.Instance.ExistsTexture (CI.TEXTURE_DIR + "CI-folder"))
+					m_directoryImage = GameDatabase.Instance.GetTexture (CI.TEXTURE_DIR + "CI-folder", false);
+			}
+			if (!m_fileImage) {
+				m_fileImage = new Texture2D (38, 38, TextureFormat.ARGB32, false);
+				if (GameDatabase.Instance.ExistsTexture (CI.TEXTURE_DIR + "CI-file"))
+					m_fileImage = GameDatabase.Instance.GetTexture (CI.TEXTURE_DIR + "CI-file", false);
+			}
 
-				if (!m_directoryImage) {
-					m_directoryImage = new Texture2D (38, 38, TextureFormat.ARGB32, false);
-					if (GameDatabase.Instance.ExistsTexture (CI.TEXTURE_DIR + "CI-folder"))
-						m_directoryImage = GameDatabase.Instance.GetTexture (CI.TEXTURE_DIR + "CI-folder", false);
-				}
-				if (!m_fileImage) {
-					m_fileImage =  new Texture2D (38, 38, TextureFormat.ARGB32, false);
-					if (GameDatabase.Instance.ExistsTexture (CI.TEXTURE_DIR + "CI-file"))
-						m_fileImage = GameDatabase.Instance.GetTexture (CI.TEXTURE_DIR + "CI-file", false);
-				}
-				if (m_fileBrowser != null)
-					Log.Info("1 m_fileBrowser not null");
-				m_fileBrowser.SelectionPattern = "*.craft";
-				m_fileBrowser.DirectoryImage = m_directoryImage;
-				m_fileBrowser.FileImage = m_fileImage;
-				if (m_textPath != "")
-					m_fileBrowser.SetNewDirectory(m_textPath);
-				Log.Info ("m_fileBrowser setup completed");
-				if (m_fileBrowser != null)
-					Log.Info("2 m_fileBrowser not null");
+			m_fileBrowser.SelectionPattern = "*.craft";
+			m_fileBrowser.DirectoryImage = m_directoryImage;
+			m_fileBrowser.FileImage = m_fileImage;
+			m_fileBrowser.showDrives = CI.configuration.showDrives;
+			m_fileBrowser.ShowNonmatchingFiles = false;
+
+			if (m_textPath != "")
+				m_fileBrowser.SetNewDirectory (m_textPath);
+
+			#if false
 			}
 			if (m_fileBrowser != null)
 				Log.Info("3 m_fileBrowser not null");
@@ -300,16 +310,19 @@ namespace CraftImport
 			GUI.DragWindow ();
 			if (m_fileBrowser != null)
 				Log.Info("m_fileBrowser not null");
+			#endif
 		}
 
 		protected void FileSelectedCallback (string path)
 		{
-			Log.Info ("FileSelectedCallback");
 			m_fileBrowser = null;
 			fileBrowserEnabled = false;
+			downloadState = downloadStateType.GUI;
 
 			m_textPath = path;
-			CI.configuration.lastImportDir = System.IO.Path.GetDirectoryName(m_textPath);
+			if (m_textPath != "")
+				craftURL = "file://" + m_textPath;
+			CI.configuration.lastImportDir = System.IO.Path.GetDirectoryName (m_textPath);
 		}
 
 
@@ -317,33 +330,31 @@ namespace CraftImport
 		public void OnGUI ()
 		{
 			if (m_fileBrowser != null) {
-				Log.Info ("m_fileBrowser not null");
-				Log.Info ("fileBrowserEnabled: " + fileBrowserEnabled.ToString());
 				if (!fileBrowserEnabled) {
 					
 					m_fileBrowser = null;
 					downloadState = downloadStateType.GUI;
 				} else {
 
-				//	GUI.skin = HighLogic.Skin;
+					//	GUI.skin = HighLogic.Skin;
 		
 					GUIStyle s = new GUIStyle (HighLogic.Skin.textField);
 
 					s.onNormal = HighLogic.Skin.textField.onNormal;
 
-		//			s.fontSize = 15;
+					//			s.fontSize = 15;
 					s.name = "List Item";
 					s.alignment = TextAnchor.MiddleLeft;
 					//s.fontStyle = FontStyle.Bold;
 					//s.fixedHeight = 50;
 					s.imagePosition = ImagePosition.ImageLeft;
-
 					GUI.skin.customStyles [0] = s;
-
-					m_fileBrowser.OnGUI (GetInstanceID ());
+					m_fileBrowser.Window (GetInstanceID ());
 					return;
 				}
 			}
+
+
 			try {
 				if (this.Visible ()) {
 					this.bounds = GUILayout.Window (GetInstanceID (), this.bounds, this.Window, CI.TITLE, HighLogic.Skin.window);
@@ -358,7 +369,7 @@ namespace CraftImport
 			if (cfgWinData == false) {
 				cfgWinData = true;
 				newUseBlizzyToolbar = CI.configuration.useBlizzyToolbar;
-				newShowDrives = CI.configuration.showDrives;
+				//newShowDrives = CI.configuration.showDrives;
 				craftURL = "";
 				saveInSandbox = false;
 				overwriteExisting = false;
@@ -368,18 +379,12 @@ namespace CraftImport
 			SetVisible (true);
 			GUI.enabled = true;
 
-			if (downloadState == downloadStateType.FILESELECTION)
-			{
-				getFile();
-				return;
-			}
-
 			GUILayout.BeginHorizontal ();
 			GUILayout.EndHorizontal ();
 
 			GUILayout.BeginVertical ();
 
-			DrawTitle ("Craft Import");
+			//	DrawTitle ("Craft Import");
 
 
 			switch (downloadState) {
@@ -423,11 +428,12 @@ namespace CraftImport
 
 				GUILayout.BeginHorizontal ();
 				if (GUILayout.Button ("Select Local File", GUILayout.Width (125.0f))) {
-					Log.Info ("Selecting Local File");
 					downloadState = downloadStateType.FILESELECTION;
-
-					if (m_textPath.Contains(".craft"))
-						m_textPath = System.IO.Path.GetDirectoryName(m_textPath);
+					if (m_textPath == null)
+						m_textPath = "";
+					if (m_textPath.Contains (".craft"))
+						m_textPath = System.IO.Path.GetDirectoryName (m_textPath);
+					getFile ();
 				}
 				GUILayout.EndHorizontal ();
 
@@ -436,13 +442,17 @@ namespace CraftImport
 
 				GUILayout.BeginHorizontal ();
 				if (GUILayout.Button ("Import", GUILayout.Width (125.0f))) {
-					Log.Info ("Calling downloadCraft");
 					downloadCraft (craftURL);
 				}
 
 				GUILayout.FlexibleSpace ();
 				if (GUILayout.Button ("Cancel", GUILayout.Width (125.0f))) {
-
+					m_fileBrowser = null;
+					craftURL = "";
+					newCraftName = "";
+					saveInSandbox = false;
+					overwriteExisting = false;
+					downloadState = downloadStateType.INACTIVE;
 					GUIToggle ();
 				}
 
@@ -463,9 +473,9 @@ namespace CraftImport
 				GUILayout.EndHorizontal ();
 				if (Application.platform == RuntimePlatform.WindowsPlayer) {
 					GUILayout.BeginHorizontal ();
-					GUILayout.Label ("Show drive letters:");
+					GUILayout.Label ("Show drive letters in file selection dialog:");
 					GUILayout.FlexibleSpace ();
-					newShowDrives = GUILayout.Toggle (newShowDrives, "");
+					CI.configuration.showDrives = GUILayout.Toggle (CI.configuration.showDrives, "");
 					GUILayout.EndHorizontal ();
 				}
 
@@ -482,8 +492,15 @@ namespace CraftImport
 				GUILayout.FlexibleSpace ();
 				GUILayout.EndHorizontal ();
 				GUILayout.BeginHorizontal ();
+				GUILayout.Label ("Progress: " + (100 * download.progress).ToString () + "%");
+				GUILayout.EndHorizontal ();
+				GUILayout.BeginHorizontal ();
 				if (GUILayout.Button ("Cancel", GUILayout.Width (125.0f))) {
-					Log.Info ("Cancel");
+					download.Dispose ();
+					download = null;
+					SetVisible (false);
+					GUI.enabled = false;
+					downloadState = downloadStateType.INACTIVE;
 				}
 				GUILayout.EndHorizontal ();
 				break;
@@ -496,10 +513,10 @@ namespace CraftImport
 				GUILayout.EndHorizontal ();
 				GUILayout.BeginHorizontal ();
 				if (GUILayout.Button ("OK", GUILayout.Width (125.0f))) {
-					Log.Info ("OK");
 					SetVisible (false);
 					GUI.enabled = false;
 					CIInfoDisplay.infoDisplayActive = false;
+					downloadState = downloadStateType.INACTIVE;
 				}
 				GUILayout.EndHorizontal ();
 				break;
@@ -541,7 +558,6 @@ namespace CraftImport
 				GUILayout.EndHorizontal ();
 				GUILayout.BeginHorizontal ();
 				if (GUILayout.Button ("Cancel", GUILayout.Width (125.0f))) {
-					Log.Info ("Cancel");
 					craftURL = "";
 					newCraftName = "";
 					saveInSandbox = false;
@@ -571,8 +587,7 @@ namespace CraftImport
 		public void GUI_SaveData ()
 		{
 			CI.configuration.useBlizzyToolbar = newUseBlizzyToolbar;
-			CI.configuration.showDrives = newShowDrives;
-			Log.Info ("CI.configuration.lastImportDir: " + CI.configuration.lastImportDir);
+			//CI.configuration.showDrives = newShowDrives;
 			//CI.configuration.lastImportDir = m_textPath;
 		}
 

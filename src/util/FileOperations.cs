@@ -53,22 +53,14 @@ namespace CraftImport
 		public static void SaveConfiguration (Configuration configuration, String file)
 		{
 			if (configFile == null) {
-				Log.Info ("Creating configFile node");
 				configFile = new ConfigNode ();
 			}
 			if (!configFile.HasNode (CI_NODENAME)) {
-				Log.Info ("Creating configFileNode");
 				configFileNode = new ConfigNode (CI_NODENAME);
-				Log.Info ("node created");
 				configFile.SetNode (CI_NODENAME, configFileNode, true);
 			} else {
-				Log.Info ("Reading node");
 				if (configFileNode == null) {
 					configFileNode = configFile.GetNode (CI_NODENAME);
-					Log.Info ("Node read");
-					if (configFileNode == null)
-						Log.Info ("configFileNode is null");
-					
 				}
 			}
 

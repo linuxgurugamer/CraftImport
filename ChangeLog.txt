@@ -1,2 +1,7 @@
 ﻿0.1.0		initial release
 
+0.2.0		Fixed bug where showDrives wasn't being honored, so that drives were always being shown
+0.3.0		Removed unnecessary dialog for file selection
+			Added initial error checking for valid craft file, more needs to be done
+			Changed file selection to only show directories and craft files
+			Fixed bug where after you download one file, you can't do any more.  Related to unnecessary dialog

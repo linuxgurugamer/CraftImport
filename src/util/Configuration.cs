@@ -30,8 +30,6 @@ namespace CraftImport
 #else
 			logLevel = Log.LEVEL.WARNING;
 #endif
-			Log.Info ("Configuration - Setting default config");
-
 			useBlizzyToolbar = false;
 			lastImportDir = "";
 			showDrives = true;
@@ -45,14 +43,12 @@ namespace CraftImport
 			
 		public void Save ()
 		{
-			Log.Info ("Configuration.Save");
 			FileOperations.SaveConfiguration (this, FILE_NAME);
 			CI.changeCallbacks = true;
 		}
 
 		public void Load ()
 		{
-			Log.Info ("Configuration.Load");
 			FileOperations.LoadConfiguration (this, FILE_NAME);
 		}
 

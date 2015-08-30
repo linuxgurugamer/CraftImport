@@ -9,14 +9,6 @@ using KSP.IO;
 
 namespace CraftImport
 {
-	
-	public enum UIOnScreenshot : ushort
-	{
-		show = 0,
-		hide,
-		both}
-
-	;
 
 	[KSPAddon (KSPAddon.Startup.MainMenu, true)]
 	public partial class CI : MonoBehaviour
@@ -48,16 +40,12 @@ namespace CraftImport
 
 		public void Awake ()
 		{
-			Log.Info ("Awake");
 			uiVisiblity = new UICLASS ();
 			uiVisiblity.Awake ();
-
 		}
 
 		public void Start ()
 		{
-
-			Log.Info ("Start");
 			DontDestroyOnLoad (this);
 			configuration.Load ();
 #if (DEBUG)
@@ -66,7 +54,6 @@ namespace CraftImport
 			Log.SetLevel (configuration.logLevel);
 #endif
 			configuration.BlizzyToolbarIsAvailable = ToolbarManager.ToolbarAvailable;
-			Log.Info ("BlizzyToolbarIsAvailable: " + configuration.BlizzyToolbarIsAvailable.ToString ());
 
 			if (configuration.BlizzyToolbarIsAvailable) {
 				InitToolbarButton ();
@@ -82,7 +69,6 @@ namespace CraftImport
 		public void Update ()
 		{
 			if (this.gui == null) {
-				Log.Info ("this.gui == null");
 				this.gui = this.gameObject.AddComponent<MainMenuGui> ();
 				this.gui.SetVisible (false);
 			}

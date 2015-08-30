@@ -22,7 +22,6 @@ namespace CraftImport
 
 		public void ToolbarToggle()
 		{
-			Log.Info("btnReturn.OnClick");
 			if (gui.Visible ()) {
 				gui.SetVisible (false);
 				GUI.enabled = false;
@@ -34,7 +33,6 @@ namespace CraftImport
 					gui.OnGUIHideApplicationLauncher ();
 					//InitToolbarButton ();
 				} else {
-					Log.Info ("Trying to add stock toolbar");
 					//gui.OnGUIShowApplicationLauncher ();
 					CIInfoDisplay.infoDisplayActive = false;
 					//GameEvents.onGUIApplicationLauncherReady.Add (gui.OnGUIApplicationLauncherReady);
@@ -73,7 +71,6 @@ namespace CraftImport
             
             try
             {
-				Log.Info("Initialising the Toolbar Icon");
                 btnReturn = ToolbarManager.Instance.add("CraftImport", "btnReturn");
 //				btnReturn.TexturePath = "SpaceTux/AS/Textures/AS_24_white";
 				btnReturn.TexturePath = TEXTURE_DIR + "CI-24";
