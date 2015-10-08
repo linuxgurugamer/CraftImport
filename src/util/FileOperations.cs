@@ -67,6 +67,7 @@ namespace CraftImport
 			configFileNode.SetValue ("useBlizzyToolbar", configuration.useBlizzyToolbar.ToString (), true);
 			configFileNode.SetValue ("lastImportDir", configuration.lastImportDir, true);
 			configFileNode.SetValue ("showDrives", configuration.showDrives.ToString (), true);
+			//configFileNode.SetValue ("ckanExecPath", configuration.ckanExecPath, true);
 			configFile.Save (CI_CFG_FILE);
 		}
 
@@ -97,7 +98,7 @@ namespace CraftImport
 					configuration.useBlizzyToolbar = bool.Parse (SafeLoad(configFileNode.GetValue ("useBlizzyToolbar"),configuration.useBlizzyToolbar));
 					configuration.lastImportDir = SafeLoad(configFileNode.GetValue ("lastImportDir"),configuration.lastImportDir);
 					configuration.showDrives = bool.Parse (SafeLoad(configFileNode.GetValue ("showDrives"),configuration.showDrives));
-
+					//configuration.ckanExecPath = SafeLoad(configFileNode.GetValue("ckanExecPath"), configuration.ckanExecPath);
 				}
 			}
 		}

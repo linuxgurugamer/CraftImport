@@ -67,6 +67,8 @@
     <Compile Include="src\gui\CIInfoDisplay.cs" />
     <Compile Include="src\gui\CI_gui.cs" />
     <Compile Include="src\gui\FileBrowser.cs" />
+    <Compile Include="src\util\ThumbnailHelper.cs" />
+    <Compile Include="src\util\SimpleJSON.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>

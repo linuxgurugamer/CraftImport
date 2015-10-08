@@ -3,6 +3,8 @@ using UnityEngine;
 using System.IO;
 using System.Collections.Generic;
 
+using System.Reflection;
+
 
 namespace CraftImport
 {
@@ -365,9 +367,37 @@ namespace CraftImport
 			m_newDirectory = null;
 		}
 
+		/// <summary>
+		/// //////////////////////
+		/// 
+		/// </summary>
+		#if false
+		void getModList()
+		{
+			String[] mods = new string[0];
+
+			Log.Info ("getModList");
+
+			System.Reflection.Assembly[] assemblies = System.AppDomain.CurrentDomain.GetAssemblies();
+			foreach (var A in assemblies)
+			{
+				//Log.Info("FullName: " + A.GetName());
+				string a = A.GetName().ToString();
+				int idx = a.IndexOf (",");
+				a = a.Substring (0, idx);
+
+				Log.Info ("a.name: " + a);
+
+			}
+				
+		}
+		#endif
+		/// <summary>
+		/// ////////////////////
+		/// </summary>
 		protected void BuildContent ()
 		{
-			
+		//	getModList ();
 			m_directoriesWithImages = new GUIContent[m_directories.Length];
 			for (int i = 0; i < m_directoriesWithImages.Length; ++i) {
 				m_directoriesWithImages [i] = new GUIContent (m_directories [i], DirectoryImage);
@@ -377,7 +407,32 @@ namespace CraftImport
 				m_nonMatchingDirectoriesWithImages [i] = new GUIContent (m_nonMatchingDirectories [i], DirectoryImage);
 			}
 			m_filesWithImages = new GUIContent[m_files.Length];
+			//ShipConstruct ship; // = new ShipConstruct ();
 			for (int i = 0; i < m_filesWithImages.Length; ++i) {
+
+				#if false
+				//if (i == 0)
+				if (m_files [i].Contains (".craft")) {
+					string f = m_newDirectory + "/" + m_files [i];
+					Log.Info ("f: " + f);
+					if (System.IO.File.Exists (f)) {
+
+						//var configFile = ConfigNode.Load (f);
+
+						ShipConstruct ship = ShipConstruction.LoadShip (f);
+
+						ThumbnailHelper.CaptureThumbnail (ship, 256, "tmp", m_files [i] + i.ToString());
+						//ShipConstruction.CaptureThumbnail (ship, "tmp", m_files [i] + "-2-" + i.ToString ());
+
+
+						foreach (var p in ship.Parts)
+							UnityEngine.Object.Destroy(p.gameObject);
+						
+						//configFile = null;
+						//ship = null;
+					}
+				}
+				#endif
 				m_filesWithImages [i] = new GUIContent (m_files [i], FileImage);
 			}
 			m_nonMatchingFilesWithImages = new GUIContent[m_nonMatchingFiles.Length];

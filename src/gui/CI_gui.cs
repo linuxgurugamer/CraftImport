@@ -1,11 +1,14 @@
 ﻿using System;
+using System.Diagnostics;
 using UnityEngine;
 using System.IO;
 using System.Text.RegularExpressions;
 
+using SimpleJSON;
 
 namespace CraftImport
 {
+	
 	public class MainMenuGui : MonoBehaviour
 	{
 		private const int WIDTH = 500;
@@ -33,6 +36,8 @@ namespace CraftImport
 		private static bool appLaucherHidden = true;
 		private static string craftURL = "";
 		private static string newCraftName = "";
+		private static string newCkanExecPath = "";
+		string instructions = "";
 
 		enum downloadStateType
 		{
@@ -131,7 +136,7 @@ namespace CraftImport
 			this.visible = visible;
 		}
 
-		void saveCraftFile (string craftFile)
+		bool saveCraftFile (string craftFile)
 		{
 			//Log.Info ("saveCraftFile: " + craftFile);
 			string saveDir = "";
@@ -173,7 +178,7 @@ namespace CraftImport
 
 				if (System.IO.File.Exists (saveFile) && !overwriteExisting) {
 					downloadState = downloadStateType.FILEEXISTS;
-					return;
+					return false;
 				}
 
 				System.IO.File.WriteAllText (saveFile, strCraftFile);
@@ -184,11 +189,14 @@ namespace CraftImport
 				//downloadErrorMessage = download.error;
 				downloadErrorMessage = "Download URL did not specify a valid .craft file";
 				downloadState = downloadStateType.ERROR;
-				return;
+				return false;
 			}
+			return true;
 		}
 
+
 		WWW download;
+		bool kerbalx = false;
 
 		System.Collections.IEnumerator doDownloadCraft (string craftURL)
 		{
@@ -201,6 +209,7 @@ namespace CraftImport
 					downloadState = downloadStateType.ERROR;
 					yield break;
 				}
+				kerbalx = (craftURL.IndexOf ("kerbalx.com", StringComparison.OrdinalIgnoreCase) >= 0);
 				// Create a download object
 				download = new WWW (s);
 				// Wait until the download is done
@@ -211,11 +220,93 @@ namespace CraftImport
 					downloadState = downloadStateType.ERROR;
 					yield break;
 				} else {
-					saveCraftFile (download.text);
-					craftURL = "";
+					bool b = saveCraftFile (download.text);
+
 					saveInSandbox = false;
 					overwriteExisting = false;
-					//downloadState = downloadStateType.COMPLETED;
+
+					if (b) {
+						//downloadState = downloadStateType.COMPLETED;
+						if (kerbalx) {
+							bool https = (craftURL.IndexOf ("https://kerbalx.com", StringComparison.OrdinalIgnoreCase) == 0);
+							int dot = craftURL.IndexOf (".craft");
+							if (dot > 0) {
+								craftURL = craftURL.Substring (0, dot);
+							}
+							Log.Info ("craftURL on kerbalx: " + craftURL);
+							s = craftURL + ".json";
+							download.Dispose ();
+							download = new WWW (s);
+							// Wait until the download is done
+							yield   return download;
+							var j = JSON.Parse (download.text);
+							int i = j ["mods"].Count;
+							string m;
+							for (int i1 = 0; i1 < i; i1++) {
+								m = j ["mods"] [i1];
+								Log.Info ("Mod: " + m);
+							}
+
+							s = craftURL + ".ckan";
+							download.Dispose ();
+							download = new WWW (s);
+							// Wait until the download is done
+							yield   return download;
+
+							// 1. Need to get current ksp directory for ckan, root path ends in a slash
+							string root = KSPUtil.ApplicationRootPath.Substring(0, KSPUtil.ApplicationRootPath.Length - 12);
+							Log.Info("Root path: " + root);
+							string ckanDir = root + "CKAN";
+							if (System.IO.Directory.Exists(ckanDir))
+							{
+								string ckanFile = j ["name"] + ".ckan";
+								Log.Info ("ckanFile: " + ckanFile);
+								string ckanFilePath = ckanDir + "/" + ckanFile;
+								System.IO.File.WriteAllText(ckanFilePath, download.text);
+								instructions = "If you can't load the imported craft: " + j ["name"] +
+								", then you will have to load the mods needed.  A .ckan file has been saved in the CKAN directory for the current game:\n\n" +
+								ckanFilePath + "\n\nYou can use CKAN to load all missing mods by following these instructions:\n\n" +
+								"1.  Start CKAN\n2.  Select File->Import from .ckan\n3.  Navigate to the folder:      " + ckanDir +
+								"\n4.  Select the file:      " + ckanFile + "\n";
+							}
+							else{
+								instructions = "If you can't load the imported craft: " + j ["name"] + ", then you will have to load the necessary mods by hand." +
+								"\n\nYou don't seem to have CKAN installed in this game, so you will have to install them manually.\n\n" +
+								"Here is the list of mods that this craft file needs:\n\n";
+								for (int i1 = 0; i1 < i; i1++) {
+									m = j ["mods"] [i1];
+									instructions = instructions + m + "\n";
+								}
+							}
+
+
+							#if false
+							// 2. Need to get list of installed mods from ckan
+							var proc = new Process {
+								StartInfo = new ProcessStartInfo {
+									FileName = CI.configuration.ckanExecPath,
+									Arguments = "list --kspdir \"" + KSPUtil.ApplicationRootPath + "\"" ,
+									UseShellExecute = false,
+									RedirectStandardOutput = true,
+									CreateNoWindow = true
+								}
+							};
+							proc.Start();
+							while (!proc.StandardOutput.EndOfStream) {
+								string line = proc.StandardOutput.ReadLine();
+								Log.Info ("ckan output: " + line);
+								// do something with line
+							}
+							#endif
+							// mono ckan.exe list --kspdir "/Users/jbayer/KerbalInstalls/1.0 We Have Liftoff/test/KSP_all_2_1.0.4"
+
+							// Need to run this to do install:
+							//
+							// mono ckan.exe install -c mod.ckan --kspdir "/Users/jbayer/KerbalInstalls/1.0 We Have Liftoff/test/KSP_all_2_1.0.4"
+
+						}
+					}
+					craftURL = "";
 				}
 				download.Dispose ();
 				download = null;
@@ -239,11 +330,13 @@ namespace CraftImport
 		[SerializeField]
 		protected Texture2D m_directoryImage,
 			m_fileImage;
+		private string selectionType;
 
-
-		void getFile ()
+		void getFile (string title, string suffix)
 		{
 			fileBrowserEnabled = true;
+			selectionType = suffix;
+
 			#if false
 			GUILayout.BeginHorizontal ();
 			GUILayout.Label ("Select Craft File: ", GUILayout.Width (100));
@@ -258,7 +351,7 @@ namespace CraftImport
 			#endif
 			m_fileBrowser = new FileBrowser (
 				new Rect (Screen.width / 2 - BR_WIDTH / 2, Screen.height / 2 - BR_HEIGHT / 2, BR_WIDTH, BR_HEIGHT),
-				"Choose Craft File",
+				title,
 				FileSelectedCallback
 			);
 
@@ -272,8 +365,8 @@ namespace CraftImport
 				if (GameDatabase.Instance.ExistsTexture (CI.TEXTURE_DIR + "CI-file"))
 					m_fileImage = GameDatabase.Instance.GetTexture (CI.TEXTURE_DIR + "CI-file", false);
 			}
-
-			m_fileBrowser.SelectionPattern = "*.craft";
+			// Linux change may needed here
+			m_fileBrowser.SelectionPattern = "*" + suffix;
 			m_fileBrowser.DirectoryImage = m_directoryImage;
 			m_fileBrowser.FileImage = m_fileImage;
 			m_fileBrowser.showDrives = CI.configuration.showDrives;
@@ -320,9 +413,15 @@ namespace CraftImport
 			downloadState = downloadStateType.GUI;
 
 			m_textPath = path;
-			if (m_textPath != "")
-				craftURL = "file://" + m_textPath;
-			CI.configuration.lastImportDir = System.IO.Path.GetDirectoryName (m_textPath);
+			if (m_textPath != "" && m_textPath != null) {
+				if (selectionType == ".craft") {
+					craftURL = "file://" + m_textPath;
+					CI.configuration.lastImportDir = System.IO.Path.GetDirectoryName (m_textPath);
+				}
+				if (selectionType == ".exe") {
+					newCkanExecPath = m_textPath;
+				}
+			}
 		}
 
 
@@ -370,6 +469,7 @@ namespace CraftImport
 				cfgWinData = true;
 				newUseBlizzyToolbar = CI.configuration.useBlizzyToolbar;
 				//newShowDrives = CI.configuration.showDrives;
+				//newCkanExecPath = CI.configuration.ckanExecPath;
 				craftURL = "";
 				saveInSandbox = false;
 				overwriteExisting = false;
@@ -433,7 +533,7 @@ namespace CraftImport
 						m_textPath = "";
 					if (m_textPath.Contains (".craft"))
 						m_textPath = System.IO.Path.GetDirectoryName (m_textPath);
-					getFile ();
+					getFile ("Enter Craft File", ".craft");
 				}
 				GUILayout.EndHorizontal ();
 
@@ -465,7 +565,21 @@ namespace CraftImport
 				GUILayout.BeginHorizontal ();
 				DrawTitle ("Options");
 				GUILayout.EndHorizontal ();
+				#if false
+				GUILayout.BeginHorizontal ();
+				if (GUILayout.Button ("CKAN path", GUILayout.Width (125.0f))) {
+					downloadState = downloadStateType.FILESELECTION;
 
+					m_textPath = newCkanExecPath;
+	
+					// Linux change needed
+					getFile ("Select CKAN Executable", ".exe");
+				}
+
+				GUILayout.FlexibleSpace ();
+				newCkanExecPath = GUILayout.TextField (newCkanExecPath, GUILayout.MinWidth (200F), GUILayout.MaxWidth (300F));
+				GUILayout.EndHorizontal ();
+				#endif
 				GUILayout.BeginHorizontal ();
 				GUILayout.Label ("Use Blizzy Toolbar if available:");
 				GUILayout.FlexibleSpace ();
@@ -512,12 +626,20 @@ namespace CraftImport
 				GUILayout.FlexibleSpace ();
 				GUILayout.EndHorizontal ();
 				GUILayout.BeginHorizontal ();
+				GUILayout.TextArea (instructions);
+				GUILayout.EndHorizontal ();
+				GUILayout.BeginHorizontal ();
+				GUILayout.Label ("");
+				GUILayout.EndHorizontal ();
+				GUILayout.BeginHorizontal ();
+				GUILayout.FlexibleSpace ();
 				if (GUILayout.Button ("OK", GUILayout.Width (125.0f))) {
 					SetVisible (false);
 					GUI.enabled = false;
 					CIInfoDisplay.infoDisplayActive = false;
 					downloadState = downloadStateType.INACTIVE;
 				}
+				GUILayout.FlexibleSpace ();
 				GUILayout.EndHorizontal ();
 				break;
 
@@ -587,6 +709,7 @@ namespace CraftImport
 		public void GUI_SaveData ()
 		{
 			CI.configuration.useBlizzyToolbar = newUseBlizzyToolbar;
+			//CI.configuration.ckanExecPath = newCkanExecPath;
 			//CI.configuration.showDrives = newShowDrives;
 			//CI.configuration.lastImportDir = m_textPath;
 		}

@@ -19,6 +19,7 @@ namespace CraftImport
 		public bool useBlizzyToolbar { get; set; }
 		public string lastImportDir { get; set; }
 		public bool showDrives { get; set; }
+		//public string ckanExecPath { get; set; }
 
 		internal Boolean BlizzyToolbarIsAvailable = false;
 
@@ -32,6 +33,7 @@ namespace CraftImport
 #endif
 			useBlizzyToolbar = false;
 			lastImportDir = "";
+			//ckanExecPath = "";
 			showDrives = true;
 		}
 

@@ -5,3 +5,5 @@
 			Added initial error checking for valid craft file, more needs to be done
 			Changed file selection to only show directories and craft files
 			Fixed bug where after you download one file, you can't do any more.  Related to unnecessary dialog
+0.4.0		Added integration with KerbalX.  CKan file is downloaded and saved in case the imported craft file
+			needs additional mods to be used, and then provides instructions on screen 
