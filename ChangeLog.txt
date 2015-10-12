@@ -7,3 +7,9 @@
 			Fixed bug where after you download one file, you can't do any more.  Related to unnecessary dialog
 0.4.0		Added integration with KerbalX.  CKan file is downloaded and saved in case the imported craft file
 			needs additional mods to be used, and then provides instructions on screen 
+
+0.5.0		Changed visibility to only be visible in VAB and SPH
+			If no http/https/file is at the beginning of the craft name, checks to see if it is
+			a local file.  If not, it prepends "http://"
+			Added "OK" button in case of error, will return to GUI screen with craftURL intact for retrying
+0.5.1		Fixed typo which prevented ALL downloads or copies

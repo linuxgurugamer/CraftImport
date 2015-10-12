@@ -72,7 +72,7 @@ namespace CraftImport
             try
             {
                 btnReturn = ToolbarManager.Instance.add("CraftImport", "btnReturn");
-//				btnReturn.TexturePath = "SpaceTux/AS/Textures/AS_24_white";
+				btnReturn.Visibility = new GameScenesVisibility(GameScenes.EDITOR);
 				btnReturn.TexturePath = TEXTURE_DIR + "CI-24";
 				btnReturn.ToolTip = TITLE;
 				btnReturn.OnClick += e => ToolbarToggle();

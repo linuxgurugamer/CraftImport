@@ -1,19 +1,22 @@
 ﻿<Properties StartupItem="CraftImport.csproj">
-  <MonoDevelop.Ide.Workspace ActiveConfiguration="Release" />
-  <MonoDevelop.Ide.Workbench ActiveDocument="ChangeLog.txt">
+  <MonoDevelop.Ide.Workspace ActiveConfiguration="ReleaseExport" />
+  <MonoDevelop.Ide.Workbench ActiveDocument="craftimport.version">
     <Files>
-      <File FileName="src\util\Configuration.cs" Line="36" Column="6" />
-      <File FileName="craftimport.version" Line="8" Column="12" />
-      <File FileName="src\CI.cs" Line="73" Column="20" />
-      <File FileName="src\gui\CI_gui.cs" Line="267" Column="62" />
-      <File FileName="src\gui\FileBrowser.cs" Line="536" Column="15" />
-      <File FileName="src\util\FileOperations.cs" Line="101" Column="99" />
+      <File FileName="src\gui\FileBrowser.cs" Line="56" Column="20" />
+      <File FileName="src\gui\CI_gui.cs" Line="108" Column="3" />
+      <File FileName="src\gui\DropDownList.cs" Line="85" Column="33" />
+      <File FileName="src\CI.cs" Line="49" Column="1" />
+      <File FileName="src\util\Configuration.cs" Line="42" Column="13" />
+      <File FileName="..\Extraplanetary-Launchpads\Source\GUI\BuildWindow.cs" Line="1" Column="1" />
+      <File FileName="src\util\FileOperations.cs" Line="1" Column="1" />
       <File FileName="src\gui\CIInfoDisplay.cs" Line="1" Column="1" />
       <File FileName="src\util\UIClass.cs" Line="1" Column="1" />
-      <File FileName="src\CI_ToolbarButtons.cs" Line="31" Column="71" />
+      <File FileName="src\CI_ToolbarButtons.cs" Line="1" Column="1" />
       <File FileName="src\util\ThumbnailHelper.cs" Line="1" Column="1" />
-      <File FileName="src\util\SimpleJSON.cs" Line="1236" Column="2" />
-      <File FileName="ChangeLog.txt" Line="8" Column="8" />
+      <File FileName="src\util\SimpleJSON.cs" Line="1" Column="1" />
+      <File FileName="ChangeLog.txt" Line="1" Column="1" />
+      <File FileName="src\Debug_AutoLoadPersistentSaveOnStartup.cs" Line="1" Column="1" />
+      <File FileName="craftimport.version" Line="9" Column="12" />
     </Files>
   </MonoDevelop.Ide.Workbench>
   <MonoDevelop.Ide.DebuggingService.Breakpoints>

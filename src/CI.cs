@@ -2,7 +2,7 @@
 
 using System;
 using UnityEngine;
-using KSP.IO;
+//using KSP.IO;
 
 
 //using System.Globalization;
@@ -63,13 +63,15 @@ namespace CraftImport
 					setToolbarButtonVisibility (false);
 				}
 			}
-
 		}
 
 		public void Update ()
 		{
 			if (this.gui == null) {
 				this.gui = this.gameObject.AddComponent<MainMenuGui> ();
+				#if EXPORT
+	//			this.gui.Awake ();
+				#endif
 				this.gui.SetVisible (false);
 			}
 
@@ -91,6 +93,9 @@ namespace CraftImport
 		internal void OnDestroy ()
 		{
 			Log.Info ("destroying CraftImport");
+			#if EXPORT
+			gui.OnDestroy ();
+			#endif
 			DelToolbarButton ();
 			configuration.Save ();
 		}

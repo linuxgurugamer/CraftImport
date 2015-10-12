@@ -1,7 +1,11 @@
-﻿//#define USE_SharpZipLib
+﻿
+//#define USE_SharpZipLib
 #if !UNITY_WEBPLAYER
 #define USE_FileIO
 #endif
+
+// Downloaded from:  http://wiki.unity3d.com/index.php/SimpleJSON
+
 /* * * * *
  * A simple JSON Parser / builder
  * ------------------------------

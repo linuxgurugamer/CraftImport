@@ -20,6 +20,9 @@ namespace CraftImport
 		public string lastImportDir { get; set; }
 		public bool showDrives { get; set; }
 		//public string ckanExecPath { get; set; }
+		public string uid {get; set;}
+		public string pswd { get; set;}
+
 
 		internal Boolean BlizzyToolbarIsAvailable = false;
 
@@ -35,6 +38,8 @@ namespace CraftImport
 			lastImportDir = "";
 			//ckanExecPath = "";
 			showDrives = true;
+			pswd = "";
+			uid = "";
 		}
 
 		public static Configuration Instance {
