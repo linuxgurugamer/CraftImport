@@ -5,6 +5,7 @@
 #endif
 
 // Downloaded from:  http://wiki.unity3d.com/index.php/SimpleJSON
+// Modified per: http://answers.unity3d.com/questions/648066/how-to-get-the-keys-of-a-dictionary-.html
 
 /* * * * *
  * A simple JSON Parser / builder
@@ -73,6 +74,8 @@ namespace SimpleJSON
 		public virtual void Add (string aKey, JSONNode aItem)
 		{
 		}
+
+		public virtual IEnumerable<string> Keys { get { yield break; } }
 
 		public virtual JSONNode this [int aIndex]   { get { return null; } set { } }
 
@@ -812,6 +815,15 @@ namespace SimpleJSON
 	public class JSONClass : JSONNode, IEnumerable
 	{
 		private Dictionary<string,JSONNode> m_Dict = new Dictionary<string,JSONNode> ();
+
+		public override IEnumerable<string> Keys
+		{
+			get 
+			{
+				foreach(var key in m_Dict.Keys)
+					yield return key;
+			}
+		}
 
 		public override JSONNode this [string aKey]
 		{

@@ -23,7 +23,7 @@ namespace CraftImport
 		//		{
 		//		}
 		private const int WIDTH = 500;
-		private const int HEIGHT = 175;
+		private const int HEIGHT = 400;
 		private const int BR_WIDTH = 600;
 		private const int BR_HEIGHT = 500;
 
@@ -47,14 +47,16 @@ namespace CraftImport
 		private static bool appLaucherHidden = true;
 		private static string craftURL = "";
 		private static string newCraftName = "";
-		private static string newCkanExecPath = "";
+		//private static string newCkanExecPath = "";
+
 		string instructions = "";
 
 		#if EXPORT
 		#if DEBUG
-		string uploadServer = "https://kerbalx-stage.herokuapp.com";
+		string uploadServer = "http://kerbalx-stage.herokuapp.com";
 		#else
-		string uploadServer = "https://kerbalx.com";
+		//string uploadServer = "https://kerbalx.com";
+		string uploadServer = "https://kerbalx-stage.herokuapp.com";
 		#endif
 		#endif
 
@@ -64,7 +66,11 @@ namespace CraftImport
 			UPLOAD,
 			UPLOADINPROGRESS,
 			UPLOADCOMPLETED,
+			UPLOADERROR,
 			ACTIONGROUPS,
+			GETDUPCRAFTLIST,
+			UPDATECRAFTLISTINPROGRESS,
+			SELECTDUPCRAFT,
 			#endif
 			INACTIVE,
 			GUI,
@@ -83,6 +89,7 @@ namespace CraftImport
 		private static string uploadErrorMessage;
 
 		bool firstAwake = false;
+
 		public void Awake ()
 		{
 			if (!firstAwake) {
@@ -158,6 +165,8 @@ namespace CraftImport
 			"rover",
 			"lifter"
 		});
+
+		string[] fixedActions = { "abort", "gears", "brakes", "lights", "RCS", "SAS" };
 
 		public void styleItemSelectionChanged (Int32 OldIndex, Int32 NewIndex)
 		{
@@ -383,12 +392,16 @@ namespace CraftImport
 								"1.  Start CKAN\n2.  Select File->Import from .ckan\n3.  Navigate to the folder:      " + ckanDir +
 								"\n4.  Select the file:      " + ckanFile + "\n";
 							} else {
-								instructions = "If you can't load the imported craft: " + j ["name"] + ", then you will have to load the necessary mods by hand." +
-								"\n\nYou don't seem to have CKAN installed in this game, so you will have to install them manually.\n\n" +
-								"Here is the list of mods that this craft file needs:\n\n";
-								for (int i1 = 0; i1 < i; i1++) {
-									m = j ["mods"] [i1];
-									instructions = instructions + m + "\n";
+								if (j ["mods"].Count > 0) {
+									instructions = "If you can't load the imported craft: " + j ["name"] + ", then you will have to load the necessary mods by hand." +
+									"\n\nYou don't seem to have CKAN installed in this game, so you will have to install them manually.\n\n" +
+									"Here is the list of mods that this craft file needs:\n\n";
+									for (int i1 = 0; i1 < i; i1++) {
+										m = j ["mods"] [i1];
+										instructions = instructions + m + "\n";
+									}
+								} else {
+									instructions = "You should be able to load the craft in either the VAB or SPH";
 								}
 							}
 
@@ -417,6 +430,8 @@ namespace CraftImport
 							//
 							// mono ckan.exe install -c mod.ckan --kspdir "/Users/jbayer/KerbalInstalls/1.0 We Have Liftoff/test/KSP_all_2_1.0.4"
 
+						} else {
+							instructions = "If you can't load the imported craft, then you will have to load the necessary mods by hand.";
 						}
 					}
 					craftURL = "";
@@ -443,13 +458,21 @@ namespace CraftImport
 
 		string tags = "";
 		string style = "";
-		string description = "";
 		string videoUrl = "";
-		bool updateExisting = false;
+		string pictureUrl = "";
+		bool forceNew = false;
 		bool saveUid = false;
 		bool savePswd = false;
 		int uploadProgress;
 		float lastUpdate;
+		string[] actionGroups = new string[16];
+		Vector2 buildMenuScrollPosition = new Vector2 ();
+
+		List<string> ids = new List<string> ();
+		List<string> craftNames = new List<string> ();
+		//List<string> craftUrls = new List<string> ();
+		List<bool> selectedCraft = new List<bool> ();
+		int lastSelectedCraft = -1;
 
 		void saveUidPswd ()
 		{
@@ -513,41 +536,99 @@ namespace CraftImport
 						form.AddField ("tags", tags);
 					if (style != "")
 						form.AddField ("style", style);
-					if (description != "")
-						form.AddField ("description", description);
+					if (pictureUrl != "")
+						form.AddField ("picture_url", pictureUrl);					
 					if (videoUrl != "")
 						form.AddField ("video_url", videoUrl);
-					
-					form.AddField ("update_existing", updateExisting.ToString ());
+					if (forceNew)
+						form.AddField ("force_new", "true");
+					else {
+						form.AddField ("force_new", "false");
+						if (lastSelectedCraft >= 0)
+							form.AddField ("update_existing", ids [lastSelectedCraft]);
+					}
+
+					string hash;
+					for (int i = 0; i < 16; i++) {
+						actionGroups [i] = actionGroups [i].Trim ();
+						if (actionGroups [i] != "") {
+							if (i < 10) {
+								hash = (i + 1).ToString ();
+							} else {
+								hash = fixedActions [i - 10];
+							}
+							form.AddField (hash, actionGroups [i]);
+							Log.Info ("Adding field: hash: " + hash + "      value: " + actionGroups [i]);
+						}
+					}
 
 					var upload = new WWW (url, form);
 					// Wait until the download is done
 					yield   return upload;
 
 					instructions = "";
+				
 					if (!String.IsNullOrEmpty (upload.error)) {
 						Log.Error ("Error uploading: " + upload.error);
 						uploadErrorMessage = upload.error;
-						downloadState = downloadStateType.ERROR;
+						downloadState = downloadStateType.UPLOADERROR;
 						yield break;
 					} else {
-						downloadState = downloadStateType.COMPLETED;
+
+						Log.Info ("upload.responseHeaders.Count: " + upload.responseHeaders.Count);
+						if (upload.responseHeaders.Count > 0) {
+							foreach (var entry in upload.responseHeaders) {
+								Log.Info (entry.Key + "=" + entry.Value);
+							}
+						}
+							
+						downloadState = downloadStateType.UPLOADCOMPLETED;
 						craftURL = "";
-						instructions = upload.text + "\n" + thumbnailPath;
+						//instructions = upload.text + "\n" + thumbnailPath;
+
 						//if (upload.responseHeaders.Count > 0) {
 						//	for (string entry in upload.responseHeaders) {
 						//		Log.Info(entry.Value + "=" + entry.Key);
 						var j = JSON.Parse (upload.text);
-						string editUrl = uploadServer + j ["edit_url"];
 
-						Application.OpenURL (editUrl);
+						if (j ["status"].AsInt == 200) {
+							instructions = "The craft file has been imported.\n\nA browser window is being opened where you can edit the uploaded craft";
+							string editUrl = uploadServer + j ["edit_url"];
+							Application.OpenURL (editUrl);
+						} else if (j ["status"].AsInt == 409) {
+							downloadState = downloadStateType.SELECTDUPCRAFT;
+							if (j ["existing_craft"].Count == 1)
+								instructions = "There is already an existing craft by that name\n";
+							else
+								instructions = "There are " + j ["existing_craft"].Count.ToString () + " existing crafts by that name\n";
 
+							ids.Clear ();
+							craftNames.Clear ();
+							//craftUrls.Clear ();
+							selectedCraft.Clear ();
+							lastSelectedCraft = -1;
+							for (int i = 0; i < j ["existing_craft"].Count; i++) {
+								ids.Add (j ["existing_craft"] [i] ["id"]);
+								craftNames.Add (j ["existing_craft"] [i] ["name"]);
+								//craftUrls.Add (j ["existing_craft"] [i] ["url"]);
+								selectedCraft.Add (false);
+								instructions += "\n" + ids [i] + ": " + craftNames [i];
+							}
+						} else if (j ["status"].AsInt == 500) {
+							instructions = "An unknown error occurred:\n\n";
+							instructions += j ["error"];
+							instructions += "\n\nPlease contact KerbalX support for assistance";
+							downloadState = downloadStateType.UPLOADERROR;
+						} else {
+							instructions = "Unknown Error:" + j ["status"].AsInt;
+							downloadState = downloadStateType.UPLOADERROR;
+						}
 					}
 					upload.Dispose ();
 					upload = null;
 				} else {
 					instructions = "Error";
-					downloadState = downloadStateType.ERROR;
+					downloadState = downloadStateType.UPLOADERROR;
 				}
 			}
 		}
@@ -560,7 +641,68 @@ namespace CraftImport
 			downloadState = downloadStateType.UPLOADINPROGRESS;
 			StartCoroutine (doUploadCraft (craftURL));
 		}
-			
+
+
+		System.Collections.IEnumerator doGetUpdateCraftList ()
+		{
+			if (uid != "") {
+				string url = uploadServer + "/" + uid + ".json";
+
+				var upload = new WWW (url);
+				// Wait until the download is done
+				yield   return upload;
+
+				var j = JSON.Parse (upload.text);
+				instructions = "";
+
+				if (!String.IsNullOrEmpty (upload.error)) {
+					Log.Error ("Error uploading: " + upload.error);
+					uploadErrorMessage = upload.error;
+					downloadState = downloadStateType.UPLOADERROR;
+					yield break;
+				} else {
+					Log.Info ("json: " + upload.text);
+					//if (j ["status"].AsInt == 200)
+					{
+
+						ids.Clear ();
+						craftNames.Clear ();
+						//craftUrls.Clear ();
+						selectedCraft.Clear ();
+						lastSelectedCraft = -1;
+						Log.Info ("c count: " + j ["craft"].Count);
+						foreach (var key in j["craft"].Keys) {
+							Log.Info ("key: " + key);
+							Log.Info("data: " + j["craft"][key].ToString());
+							ids.Add (key);
+							craftNames.Add (j["craft"][key].ToString());
+							selectedCraft.Add (false);
+						}
+						downloadState = downloadStateType.SELECTDUPCRAFT;
+
+					#if false
+					} else if (j ["status"].AsInt == 500) {
+						instructions = "An unknown error occurred:\n\n";
+						instructions += j ["error"];
+						instructions += "\n\nPlease contact KerbalX support for assistance";
+						downloadState = downloadStateType.UPLOADERROR;
+					} else {
+						instructions = "Unknown Error:" + j ["status"].AsInt;
+						downloadState = downloadStateType.UPLOADERROR;
+		#endif
+					}
+					
+				}
+
+			} else
+				downloadState = downloadStateType.UPLOAD;
+		}
+
+		void getUpdateCraftList ()
+		{
+			downloadState = downloadStateType.UPDATECRAFTLISTINPROGRESS;
+			StartCoroutine (doGetUpdateCraftList ());
+		}
 		#endif
 		/// <summary>
 		/// //////////////////////////////////////////////
@@ -661,9 +803,7 @@ namespace CraftImport
 					craftURL = "file://" + m_textPath;
 					CI.configuration.lastImportDir = System.IO.Path.GetDirectoryName (m_textPath);
 				}
-				if (selectionType == ".exe") {
-					newCkanExecPath = m_textPath;
-				}
+
 			}
 		}
 
@@ -707,7 +847,7 @@ namespace CraftImport
 
 			try {
 				if (this.Visible ()) {
-					this.bounds = GUILayout.Window (GetInstanceID (), bounds, Window, CI.TITLE, HighLogic.Skin.window);
+					Rect bounds2 = GUILayout.Window (GetInstanceID (), bounds, Window, CI.TITLE, HighLogic.Skin.window);
 				}
 			} catch (Exception e) {
 				Log.Error ("exception: " + e.Message);
@@ -725,6 +865,11 @@ namespace CraftImport
 				saveInSandbox = false;
 				overwriteExisting = false;
 				m_textPath = CI.configuration.lastImportDir;
+				#if EXPORT
+				for (int i = 0; i < actionGroups.Length; i++)
+					actionGroups [i] = "";
+				lastSelectedCraft = -1;
+				#endif
 			} 
 
 			SetVisible (true);
@@ -778,12 +923,12 @@ namespace CraftImport
 					GUILayout.BeginHorizontal ();
 					GUILayout.Label ("Style:");
 					GUILayout.FlexibleSpace ();
-			#if true
+					#if true
 					//This draws the button and displays/hides the listbox - returns true if someone clicked the button
 					if (styleItems.styleListSelectedItem == null)
-						DrawCall();
+						DrawCall ();
 					styleItems.DrawButton ();
-			#endif
+					#endif
 					GUILayout.FlexibleSpace ();
 					//style = GUILayout.TextField (style, GUILayout.MinWidth (50F), GUILayout.MaxWidth (150F));
 					GUILayout.EndHorizontal ();
@@ -794,33 +939,48 @@ namespace CraftImport
 			
 					if (!styleItems.ListVisible) {
 						GUILayout.BeginHorizontal ();
-						GUILayout.Label ("Description:");
+						GUILayout.Label ("Picture url (previously uploaded):");
 						GUILayout.FlexibleSpace ();
 
-						description = GUILayout.TextArea (description, GUILayout.Height (50F), GUILayout.Width (300F));
+						videoUrl = GUILayout.TextField (pictureUrl, GUILayout.Width (300F));
 						GUILayout.EndHorizontal ();
 
 						GUILayout.BeginHorizontal ();
 						GUILayout.Label ("Video url (previously uploaded):");
 						GUILayout.FlexibleSpace ();
 
-						videoUrl = GUILayout.TextField (videoUrl, GUILayout.MinWidth (50F), GUILayout.MaxWidth (300F));
+						videoUrl = GUILayout.TextField (videoUrl, GUILayout.Width (300F));
 						GUILayout.EndHorizontal ();
 
 						GUILayout.BeginHorizontal ();
 						GUILayout.FlexibleSpace ();
-						if (GUILayout.Button ("Update Action Groups", GUILayout.Width (250.0f))) {
+						if (GUILayout.Button ("Action Groups Descriptions", GUILayout.Width (250.0f))) {
 							downloadState = downloadStateType.ACTIONGROUPS;
 						}
 						GUILayout.FlexibleSpace ();
 						GUILayout.EndHorizontal ();
 
 						GUILayout.BeginHorizontal ();
-						GUILayout.Label ("Update existing craft (if exists):");
+						GUILayout.Label ("Force new upload (if existing):");
 						GUILayout.FlexibleSpace ();
 
-						updateExisting = GUILayout.Toggle (updateExisting, "");
+						forceNew = GUILayout.Toggle (forceNew, "");
 						GUILayout.FlexibleSpace ();
+						if (!forceNew) {
+							if (lastSelectedCraft >= 0) {
+								GUILayout.Label ("Craft update id: " + ids [lastSelectedCraft]);
+							} else {
+								if (uid != "") {
+									GUILayout.FlexibleSpace ();
+									if (GUILayout.Button ("Select Existing Craft to Replace")) {
+										downloadState = downloadStateType.GETDUPCRAFTLIST;
+										//downloadState = downloadStateType.ACTIONGROUPS;
+									}
+								}
+							}
+						}
+
+
 						GUILayout.EndHorizontal ();
 
 						GUILayout.BeginHorizontal ();
@@ -831,16 +991,18 @@ namespace CraftImport
 
 						GUILayout.BeginHorizontal ();
 						GUILayout.Label ("Enter userid:");
-						GUILayout.FlexibleSpace ();
 
-						uid = GUILayout.TextField (uid, GUILayout.MinWidth (50F), GUILayout.MaxWidth (150F));
-						//GUILayout.FlexibleSpace ();
-						GUILayout.Label("",GUILayout.Width (20F));
+						#if true
+						GUILayout.FlexibleSpace ();
+						uid = GUILayout.TextField (uid, GUILayout.Width (150F));
+
+
+
+						GUILayout.Label ("", GUILayout.Width (20F));
 						GUILayout.Label ("Save userid:", GUILayout.Width (100F));
-						//GUILayout.FlexibleSpace ();
-						if (!styleItems.ListVisible)
-							saveUid = GUILayout.Toggle (saveUid, "");
-						
+						saveUid = GUILayout.Toggle (saveUid, "");
+
+
 						GUILayout.EndHorizontal ();
 
 
@@ -848,14 +1010,14 @@ namespace CraftImport
 						GUILayout.Label ("Enter password:");
 						GUILayout.FlexibleSpace ();
 
-						pswd = GUILayout.PasswordField (pswd, '*', 25, GUILayout.MinWidth (50F), GUILayout.MaxWidth (150F));
-						GUILayout.Label("",GUILayout.Width (20F));
+						pswd = GUILayout.PasswordField (pswd, '*', 25, GUILayout.Width (150F));
+						GUILayout.Label ("", GUILayout.Width (20F));
 						GUILayout.Label ("Save password:", GUILayout.Width (100F));
-						//GUILayout.FlexibleSpace ();
+
 						if (!saveUid)
 							savePswd = false;
-						if (!styleItems.ListVisible)
-							savePswd = GUILayout.Toggle (savePswd, "");
+
+						savePswd = GUILayout.Toggle (savePswd, "");
 						GUILayout.EndHorizontal ();
 
 						GUILayout.BeginHorizontal ();
@@ -870,7 +1032,7 @@ namespace CraftImport
 							uploadCraft (craftURL);
 						}
 						GUILayout.FlexibleSpace ();
-
+						#endif
 					}
 				} else {
 					GUILayout.BeginHorizontal ();
@@ -896,15 +1058,82 @@ namespace CraftImport
 					GUILayout.FlexibleSpace ();
 
 					GUILayout.EndHorizontal ();
-					//GUILayout.BeginHorizontal ();
-					//GUILayout.EndHorizontal ();
 				}
-
-			#if false
-				SelectPad_end ();
-			#endif
 				break;
-			#endif
+			case downloadStateType.GETDUPCRAFTLIST:
+				getUpdateCraftList ();
+
+				break;
+
+			case downloadStateType.SELECTDUPCRAFT:
+				GUILayout.BeginHorizontal ();
+				GUILayout.Label ("Select Craft to replace");
+				GUILayout.FlexibleSpace ();
+				GUILayout.EndHorizontal ();
+
+				GUILayout.BeginHorizontal ();
+				GUILayout.Label ("KerbalX id", GUILayout.Width (90F));
+				GUILayout.FlexibleSpace ();
+				GUILayout.Label ("Craft Name (clickable URL)");
+				GUILayout.FlexibleSpace ();
+				GUILayout.Label ("");
+				GUILayout.EndHorizontal ();
+
+				GUILayout.BeginHorizontal ();
+
+				buildMenuScrollPosition = GUILayout.BeginScrollView (buildMenuScrollPosition, GUILayout.Width (WIDTH - 30), GUILayout.Height (HEIGHT * 2 / 3));
+				GUILayout.BeginVertical ();
+
+
+				for (int i = 0; i < craftNames.Count; i++) {
+					GUILayout.BeginHorizontal ();
+
+					GUILayout.Label (ids [i] + ":", GUILayout.Width (90F));
+					GUILayout.FlexibleSpace ();
+					if (GUILayout.Button (craftNames [i])) {
+						//Application.OpenURL (uploadServer + craftUrls [i]);
+						Application.OpenURL (uploadServer + "/crafts/" + ids [i]);
+					}
+					#if false
+					// Get the last rect to display the line
+					var lastRect = GUILayoutUtility.GetLastRect();
+					lastRect.y += lastRect.height - 2; // Vertical alignment of the underline
+					lastRect.height = 2; // Thickness of the line
+					GUI.Box(lastRect, "");
+					#endif
+					GUILayout.FlexibleSpace ();
+					if (lastSelectedCraft >= 0 && lastSelectedCraft != i)
+						selectedCraft [i] = false;
+						
+					selectedCraft [i] = GUILayout.Toggle (selectedCraft [i], "");
+					if (selectedCraft [i] && i != lastSelectedCraft)
+						lastSelectedCraft = i;
+
+					GUILayout.EndHorizontal ();
+				}
+				GUILayout.EndVertical ();
+				GUILayout.EndScrollView (); 
+				GUILayout.EndHorizontal ();
+
+				GUILayout.BeginHorizontal ();
+				GUILayout.Label ("");
+				GUILayout.EndHorizontal ();
+				GUILayout.BeginHorizontal ();
+				GUILayout.FlexibleSpace ();
+				if (lastSelectedCraft >= 0) {
+					if (GUILayout.Button ("OK", GUILayout.Width (125.0f))) {
+						downloadState = downloadStateType.UPLOAD;
+					} 
+				} else {
+					if (GUILayout.Button ("Cancel", GUILayout.Width (125.0f))) {
+						downloadState = downloadStateType.UPLOAD;
+					}
+				}
+				
+				GUILayout.FlexibleSpace ();
+
+				GUILayout.EndHorizontal ();
+				break;
 
 			case downloadStateType.ACTIONGROUPS:
 				GUILayout.BeginHorizontal ();
@@ -913,14 +1142,42 @@ namespace CraftImport
 				GUILayout.EndHorizontal ();
 
 				GUILayout.BeginHorizontal ();
+
+				buildMenuScrollPosition = GUILayout.BeginScrollView (buildMenuScrollPosition, GUILayout.Width (WIDTH - 30), GUILayout.Height (HEIGHT * 2 / 3));
+				GUILayout.BeginVertical ();
+
+
+				for (int i = 0; i < 16; i++) {
+					GUILayout.BeginHorizontal ();
+					if (i < 10) {
+						GUILayout.Label ((i + 1).ToString () + ":");
+					} else {
+						GUILayout.Label (fixedActions [i - 10]);
+					}
+					GUILayout.FlexibleSpace ();
+					actionGroups [i] = GUILayout.TextField (actionGroups [i], GUILayout.MinWidth (50F), GUILayout.MaxWidth (300F));
+					GUILayout.EndHorizontal ();
+				}
+				GUILayout.EndVertical ();
+				GUILayout.EndScrollView (); 
+				GUILayout.EndHorizontal ();
+
+				GUILayout.BeginHorizontal ();
+				GUILayout.Label ("");
+				GUILayout.EndHorizontal ();
+				GUILayout.BeginHorizontal ();
 				GUILayout.FlexibleSpace ();
-				if (GUILayout.Button ("Cancel", GUILayout.Width (125.0f))) {
+				if (GUILayout.Button ("OK", GUILayout.Width (125.0f))) {
+					for (int i = 0; i < actionGroups.Length; i++)
+						actionGroups [i] = "";
 					downloadState = downloadStateType.UPLOAD;
 				}
 				GUILayout.FlexibleSpace ();
 
 				GUILayout.EndHorizontal ();
 				break;
+			#endif
+				
 			case downloadStateType.GUI:
 				GUILayout.BeginHorizontal ();
 				GUILayout.Label ("Enter Craft URL:");
@@ -1078,6 +1335,9 @@ namespace CraftImport
 				GUILayout.FlexibleSpace ();
 				GUILayout.EndHorizontal ();
 				GUILayout.BeginHorizontal ();
+				GUILayout.Label ("");
+				GUILayout.EndHorizontal ();
+				GUILayout.BeginHorizontal ();
 				GUILayout.FlexibleSpace ();
 				if (GUILayout.Button ("Cancel", GUILayout.Width (125.0f))) {
 					download.Dispose ();
@@ -1090,14 +1350,24 @@ namespace CraftImport
 				GUILayout.EndHorizontal ();
 				break;
 
+				#if EXPORT
+			case downloadStateType.UPLOADCOMPLETED:
+				#endif
 			case downloadStateType.COMPLETED:
 				GUILayout.BeginHorizontal ();
 				GUILayout.FlexibleSpace ();
-				GUILayout.Label ("Download completed");
+				if (downloadState == downloadStateType.COMPLETED)
+					GUILayout.Label ("Download completed");
+				else
+					GUILayout.Label ("Upload completed");
+				
 				GUILayout.FlexibleSpace ();
 				GUILayout.EndHorizontal ();
 				GUILayout.BeginHorizontal ();
-				GUILayout.TextArea (instructions);
+				if (instructions.Trim () != "")
+					GUILayout.TextArea (instructions);
+				else
+					GUILayout.Label ("");
 				GUILayout.EndHorizontal ();
 				GUILayout.BeginHorizontal ();
 				GUILayout.Label ("");
@@ -1137,16 +1407,26 @@ namespace CraftImport
 				}
 				GUILayout.EndHorizontal ();
 				break;
-
+				#if EXPORT
+			case downloadStateType.UPLOADERROR:
+				#endif
 			case downloadStateType.ERROR:
 				GUILayout.BeginHorizontal ();
 				GUILayout.FlexibleSpace ();
-				GUILayout.Label ("Download Error");
+				if (downloadState == downloadStateType.ERROR)
+					GUILayout.Label ("Download Error");
+				else
+					GUILayout.Label ("Upload Error");
 				GUILayout.FlexibleSpace ();
 				GUILayout.EndHorizontal ();
 				GUILayout.BeginHorizontal ();
 				GUILayout.FlexibleSpace ();
-				GUILayout.Label (downloadErrorMessage);
+				#if EXPORT
+				if (downloadState == downloadStateType.UPLOADERROR)
+					GUILayout.Label (uploadErrorMessage);
+				else
+				#endif
+					GUILayout.Label (downloadErrorMessage);
 				GUILayout.FlexibleSpace ();
 				GUILayout.EndHorizontal ();
 				GUILayout.BeginHorizontal ();
@@ -1178,7 +1458,7 @@ namespace CraftImport
 		{
 			GUILayout.BeginHorizontal ();
 			GUILayout.Label (text, HighLogic.Skin.label);
-			GUILayout.FlexibleSpace ();
+			//GUILayout.FlexibleSpace ();
 			GUILayout.EndHorizontal ();
 		}
 
