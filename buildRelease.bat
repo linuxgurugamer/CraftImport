@@ -49,6 +49,7 @@ del %HOMEDIR%\install\Gamedata\CraftImport\Textures\*.*
 
 rem xcopy src\Textures\CI*.* %HOMEDIR%\install\Gamedata\CraftImport\Textures /y
 xcopy src\Textures\CI-*.png   %HOMEDIR%\install\GameData\CraftImport\Textures /Y
+xcopy src\Textures\colorpicker_texture.jpg %HOMEDIR%\install\GameData\CraftImport\Textures /Y
 copy bin\Release\CraftImport.dll %HOMEDIR%\install\Gamedata\CraftImport\Plugins
 copy  craftimport.version %HOMEDIR%\install\Gamedata\CraftImport
 copy README.md %HOMEDIR%\install\Gamedata\CraftImport

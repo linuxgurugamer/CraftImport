@@ -1,21 +1,22 @@
 ﻿<Properties StartupItem="CraftImport.csproj">
   <MonoDevelop.Ide.Workspace ActiveConfiguration="ReleaseExport" />
-  <MonoDevelop.Ide.Workbench ActiveDocument="craftimport.version">
+  <MonoDevelop.Ide.Workbench ActiveDocument="src\util\ThumbnailHelper.cs">
     <Files>
       <File FileName="src\gui\FileBrowser.cs" Line="1" Column="1" />
-      <File FileName="src\gui\CI_gui.cs" Line="676" Column="6" />
+      <File FileName="src\gui\CI_gui.cs" Line="763" Column="7" />
       <File FileName="src\gui\DropDownList.cs" Line="1" Column="1" />
-      <File FileName="src\CI.cs" Line="1" Column="1" />
-      <File FileName="src\util\Configuration.cs" Line="1" Column="1" />
+      <File FileName="src\CI.cs" Line="19" Column="68" />
+      <File FileName="src\util\Configuration.cs" Line="36" Column="10" />
       <File FileName="..\Extraplanetary-Launchpads\Source\GUI\BuildWindow.cs" Line="1" Column="1" />
-      <File FileName="src\util\FileOperations.cs" Line="1" Column="1" />
+      <File FileName="src\util\FileOperations.cs" Line="175" Column="41" />
       <File FileName="src\util\UIClass.cs" Line="1" Column="1" />
       <File FileName="src\CI_ToolbarButtons.cs" Line="1" Column="1" />
-      <File FileName="src\util\ThumbnailHelper.cs" Line="1" Column="1" />
-      <File FileName="src\util\SimpleJSON.cs" Line="816" Column="3" />
       <File FileName="ChangeLog.txt" Line="1" Column="1" />
+      <File FileName="craftimport.version" Line="1" Column="1" />
       <File FileName="src\Debug_AutoLoadPersistentSaveOnStartup.cs" Line="1" Column="1" />
-      <File FileName="craftimport.version" Line="11" Column="4" />
+      <File FileName="README.md" Line="1" Column="1" />
+      <File FileName="src\util\ThumbnailHelper.cs" Line="29" Column="3" />
+      <File FileName="buildRelease.bat" Line="52" Column="94" />
     </Files>
   </MonoDevelop.Ide.Workbench>
   <MonoDevelop.Ide.DebuggingService.Breakpoints>

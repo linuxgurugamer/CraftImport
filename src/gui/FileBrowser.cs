@@ -2,8 +2,8 @@
 using UnityEngine;
 using System.IO;
 using System.Collections.Generic;
-
-using System.Reflection;
+using System.Linq;
+//using System.Reflection;
 
 
 namespace CraftImport
@@ -115,6 +115,11 @@ namespace CraftImport
 	public class FileBrowser
 	{
 
+		private static string[] GetFiles(string sourceFolder, string filters, System.IO.SearchOption searchOption)
+		{
+			return filters.Split('|').SelectMany(filter => System.IO.Directory.GetFiles(sourceFolder, filter, searchOption)).ToArray();
+		}
+
 		// Called when the user clicks cancel or select
 		public delegate void FinishedCallback (string path);
 		// Defaults to working directory
@@ -144,7 +149,19 @@ namespace CraftImport
 
 		}
 
+		public string DirSelectionPattern {
+			get {
+				return m_dirPattern;
+			}
+			set {
+				m_dirPattern = value;
+				ReadDirectoryContents ();
+			}
+
+		}
+
 		protected string m_filePattern;
+		protected string m_dirPattern;
 
 		// Optional image for directories
 		public Texture2D DirectoryImage {
@@ -279,8 +296,11 @@ namespace CraftImport
 				m_currentDirectoryParts = new string[] { "" };
 				m_currentDirectoryMatches = false;
 			} else {
-				m_currentDirectoryParts = m_currentDirectory.Split (Path.DirectorySeparatorChar);
-				if (SelectionPattern != null) {
+//				m_currentDirectoryParts = m_currentDirectory.Split (Path.DirectorySeparatorChar);
+				// do this since on Windows, forward slash works as well 
+				char[] delimiters = new char[] { '/', '\\' };
+				m_currentDirectoryParts = m_currentDirectory.Split (delimiters);
+				if (DirSelectionPattern != null) {
 
 					/* Following is a fix for the root directory being null */
 
@@ -292,7 +312,7 @@ namespace CraftImport
 						//directoryName will be null if it's a root directory
 						generation = Directory.GetDirectories (
 							directoryName,
-							SelectionPattern);
+							DirSelectionPattern );
 					} else {
 						generation = System.IO.Directory.GetLogicalDrives ();
 					}
@@ -316,7 +336,7 @@ namespace CraftImport
 				m_directories = Directory.GetDirectories (m_currentDirectory);
 				m_nonMatchingDirectories = new string[0];
 			} else {
-				m_directories = Directory.GetDirectories (m_currentDirectory, SelectionPattern);
+				m_directories = Directory.GetDirectories (m_currentDirectory , DirSelectionPattern);
 				var nonMatchingDirectories = new List<string> ();
 				if (m_showNonmatchingFiles) {
 					foreach (string directoryPath in Directory.GetDirectories(m_currentDirectory)) {
@@ -336,11 +356,11 @@ namespace CraftImport
 			for (int i = 0; i < m_directories.Length; ++i) {
 				m_directories [i] = m_directories [i].Substring (m_directories [i].LastIndexOf (Path.DirectorySeparatorChar) + 1);
 			}
-			if (BrowserType == FileBrowserType.Directory || SelectionPattern == null) {
+			if (BrowserType == FileBrowserType.Directory || DirSelectionPattern == null) {
 				m_files = Directory.GetFiles (m_currentDirectory);
 				m_nonMatchingFiles = new string[0];
 			} else {
-				m_files = Directory.GetFiles (m_currentDirectory, SelectionPattern);
+				m_files = Directory.GetFiles (m_currentDirectory, DirSelectionPattern);
 				var nonMatchingFiles = new List<string> ();
 				if (m_showNonmatchingFiles) {
 					foreach (string filePath in Directory.GetFiles(m_currentDirectory)) {
@@ -538,7 +558,7 @@ namespace CraftImport
 			if (BrowserType == FileBrowserType.File) {
 				GUI.enabled = m_selectedFile > -1;
 			} else {
-				if (SelectionPattern == null) {
+				if (DirSelectionPattern == null) {
 					GUI.enabled = m_selectedDirectory > -1;
 				} else {
 					GUI.enabled =	m_selectedDirectory > -1 ||

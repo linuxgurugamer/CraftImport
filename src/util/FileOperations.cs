@@ -13,7 +13,8 @@ namespace CraftImport
 {
 	public  class FileOperations
 	{
-		public static readonly String ROOT_PATH = KSPUtil.ApplicationRootPath;
+		public static readonly String ROOT_PATH = KSPUtil.ApplicationRootPath.Substring (0, KSPUtil.ApplicationRootPath.Length - 12);
+		//public static readonly String ROOT_PATH = KSPUtil.ApplicationRootPath;
 		private static readonly String CONFIG_BASE_FOLDER = ROOT_PATH + "GameData/";
 		private static String CI_BASE_FOLDER = CONFIG_BASE_FOLDER + "CraftImport/";
 		private const String CI_NODENAME = "CraftImport";
@@ -69,7 +70,27 @@ namespace CraftImport
 			configFileNode.SetValue ("showDrives", configuration.showDrives.ToString (), true);
 			configFileNode.SetValue ("userid", configuration.uid, true);
 			configFileNode.SetValue ("password", configuration.pswd, true);
+			configFileNode.SetValue ("showWarning", configuration.showWarning.ToString(), true);
 			//configFileNode.SetValue ("ckanExecPath", configuration.ckanExecPath, true);
+
+			configFileNode.SetValue ("vabResolution", configuration.vabResolution.ToString(), true);
+			configFileNode.SetValue ("vabElevation", configuration.vabElevation.ToString(), true);
+			configFileNode.SetValue ("vabAzimuth", configuration.vabAzimuth.ToString(), true);
+			configFileNode.SetValue ("vabPitch", configuration.vabPitch.ToString(), true);
+			configFileNode.SetValue ("vabHeading", configuration.vabHeading.ToString(), true);
+			configFileNode.SetValue ("vabFov", configuration.vabFov.ToString(), true);
+
+			configFileNode.SetValue ("sphResolution", configuration.sphResolution.ToString(), true);
+			configFileNode.SetValue ("sphElevation", configuration.sphElevation.ToString(), true);
+			configFileNode.SetValue ("sphAzimuth", configuration.sphAzimuth.ToString(), true);
+			configFileNode.SetValue ("sphPitch", configuration.sphPitch.ToString(), true);
+			configFileNode.SetValue ("sphHeading", configuration.sphHeading.ToString(), true);
+			configFileNode.SetValue ("sphFov", configuration.sphFov.ToString(), true);
+
+			configFileNode.SetValue ("backgroundR", configuration.backgroundcolor.r.ToString (), true);
+			configFileNode.SetValue ("backgroundG", configuration.backgroundcolor.g.ToString (), true);
+			configFileNode.SetValue ("backgroundB", configuration.backgroundcolor.b.ToString (), true);
+
 			configFile.Save (CI_CFG_FILE);
 		}
 
@@ -77,6 +98,20 @@ namespace CraftImport
 		// The following functions are used when loading data from the config file
 		// They make sure that if a value is missing, that the old value will be used.
 		// 
+
+		static string SafeLoad (string value, int oldvalue)
+		{
+			if (value == null)
+				return oldvalue.ToString();
+			return value;
+		}
+
+		static string SafeLoad (string value, float oldvalue)
+		{
+			if (value == null)
+				return oldvalue.ToString();
+			return value;
+		}
 
 		static string SafeLoad (string value, bool oldvalue)
 		{
@@ -102,9 +137,43 @@ namespace CraftImport
 					configuration.showDrives = bool.Parse (SafeLoad(configFileNode.GetValue ("showDrives"),configuration.showDrives));
 					configuration.pswd = SafeLoad(configFileNode.GetValue("password"), "");
 					configuration.uid = SafeLoad(configFileNode.GetValue("userid"), "");
+					configuration.showWarning = bool.Parse (SafeLoad(configFileNode.GetValue ("showWarning"),configuration.showWarning));
 
-						
-						
+					configFileNode.SetValue ("vabResolution", configuration.vabResolution.ToString(), true);
+					configFileNode.SetValue ("vabElevation", configuration.vabElevation.ToString(), true);
+					configFileNode.SetValue ("vabAzimuth", configuration.vabAzimuth.ToString(), true);
+					configFileNode.SetValue ("vabPitch", configuration.vabPitch.ToString(), true);
+					configFileNode.SetValue ("vabHeading", configuration.vabHeading.ToString(), true);
+					configFileNode.SetValue ("vabFov", configuration.vabFov.ToString(), true);
+
+					configuration.vabResolution = int.Parse(SafeLoad(configFileNode.GetValue("vabResolution"), configuration.vabResolution));
+					configuration.vabElevation = int.Parse(SafeLoad(configFileNode.GetValue("vabElevation"), configuration.vabElevation));
+					configuration.vabAzimuth = int.Parse(SafeLoad(configFileNode.GetValue("vabAzimuth"), configuration.vabAzimuth));
+					configuration.vabPitch = int.Parse(SafeLoad(configFileNode.GetValue("vabPitch"), configuration.vabPitch));
+					configuration.vabHeading = int.Parse(SafeLoad(configFileNode.GetValue("vabHeading"), configuration.vabHeading));
+					configuration.vabFov = int.Parse(SafeLoad(configFileNode.GetValue("vabFov"), configuration.vabFov));
+
+					configuration.sphResolution = int.Parse(SafeLoad(configFileNode.GetValue("sphResolution"), configuration.sphResolution));
+					configuration.sphElevation = int.Parse(SafeLoad(configFileNode.GetValue("sphElevation"), configuration.sphElevation));
+					configuration.sphAzimuth = int.Parse(SafeLoad(configFileNode.GetValue("sphAzimuth"), configuration.sphAzimuth));
+					configuration.sphPitch = int.Parse(SafeLoad(configFileNode.GetValue("sphPitch"), configuration.sphPitch));
+					configuration.sphHeading = int.Parse(SafeLoad(configFileNode.GetValue("sphHeading"), configuration.sphHeading));
+					configuration.sphFov = int.Parse(SafeLoad(configFileNode.GetValue("sphFov"), configuration.sphFov));
+
+					configFileNode.SetValue ("backgroundR", configuration.backgroundcolor.r.ToString (), true);
+					configFileNode.SetValue ("backgroundG", configuration.backgroundcolor.g.ToString (), true);
+					configFileNode.SetValue ("backgroundB", configuration.backgroundcolor.b.ToString (), true);
+
+					float r = configuration.backgroundcolor.r;
+					float g = configuration.backgroundcolor.g;
+					float b = configuration.backgroundcolor.b;
+					r = float.Parse(SafeLoad(configFileNode.GetValue("backgroundR"), r));				
+					g = float.Parse(SafeLoad(configFileNode.GetValue("backgroundR"), g));				
+					b = float.Parse(SafeLoad(configFileNode.GetValue("backgroundR"), b));				
+					configuration.backgroundcolor.r = r;
+					configuration.backgroundcolor.g = g;
+					configuration.backgroundcolor.b = b;
+
 					//configuration.ckanExecPath = SafeLoad(configFileNode.GetValue("ckanExecPath"), configuration.ckanExecPath);
 				}
 			}

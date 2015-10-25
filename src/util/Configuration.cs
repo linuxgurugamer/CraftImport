@@ -22,11 +22,41 @@ namespace CraftImport
 		//public string ckanExecPath { get; set; }
 		public string uid {get; set;}
 		public string pswd { get; set;}
+		public bool showWarning { get; set; }
 
+		public int vabResolution, sphResolution;
+		public float vabElevation, sphElevation;
+		public float vabAzimuth, sphAzimuth;
+		public float vabPitch, sphPitch;
+		public float vabHeading, sphHeading;
+		public float vabFov, sphFov;
 
 		internal Boolean BlizzyToolbarIsAvailable = false;
 
+		public Color backgroundcolor; 
 
+
+		public void setDefaultVABResolution()
+		{
+			vabResolution = 1024;
+			vabElevation = 35;
+			vabAzimuth = 135;
+			vabPitch = 35;
+			vabHeading = 135;
+			vabFov = 0.9F;
+
+		}
+		public void setDefaultSPHResolution()
+		{
+
+			sphResolution = 1024;
+			sphElevation = 45;
+			sphAzimuth = 45;
+			sphPitch = 45;
+			sphHeading = 45;
+			sphFov = 0.9F;
+
+		}
 		public Configuration ()
 		{
 #if (DEBUG)
@@ -37,9 +67,13 @@ namespace CraftImport
 			useBlizzyToolbar = false;
 			lastImportDir = "";
 			//ckanExecPath = "";
+			showWarning = true;
 			showDrives = true;
 			pswd = "";
 			uid = "";
+			setDefaultSPHResolution ();
+			setDefaultVABResolution ();
+			backgroundcolor = Color.gray;
 		}
 
 		public static Configuration Instance {

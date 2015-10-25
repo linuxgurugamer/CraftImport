@@ -12,7 +12,8 @@ namespace CraftImport
 		static IButton btnReturn = null;
 		private const string _tooltipOn = "Hide Craft Import";
 		private const string _tooltipOff = "Show Craft Import";
-		public const string TEXTURE_DIR = "CraftImport/Textures/";
+		public const string MOD_DIR = "CraftImport/";
+		public const string TEXTURE_DIR = MOD_DIR + "Textures/";
 
 		public void setToolbarButtonVisibility(bool v)
 		{
@@ -44,6 +45,7 @@ namespace CraftImport
 					gui.OnGUIShowApplicationLauncher ();
 					// Hide blizzy toolbar button
 					setToolbarButtonVisibility(false);
+
 				}
 				configuration.Save ();
 				ToolBarActive ();
@@ -53,6 +55,8 @@ namespace CraftImport
 				btnReturn.ToolTip = _tooltipOn;
 
 				btnReturn.TexturePath = TEXTURE_DIR + "CI-24";
+
+				InputLockManager.SetControlLock((ControlTypes.EDITOR_LOCK | ControlTypes.EDITOR_GIZMO_TOOLS), "CraftImportLock");
 			}
 		}
 

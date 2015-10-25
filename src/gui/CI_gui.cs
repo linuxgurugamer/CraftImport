@@ -2,8 +2,11 @@
 using System.Collections.Generic;
 using UnityEngine;
 using System.Text.RegularExpressions;
-
+using System.Text;
+using System.Net;
+using System.Linq;
 using SimpleJSON;
+
 
 //using KSPPluginFramework;
 
@@ -29,6 +32,7 @@ namespace CraftImport
 
 		private Rect bounds = new Rect (Screen.width / 2 - WIDTH / 2, Screen.height / 2 - HEIGHT / 2, WIDTH, HEIGHT);
 		private /* volatile*/ bool visible = false;
+		bool resetWinPos = false;
 		// Stock APP Toolbar - Stavell
 		public static ApplicationLauncherButton CI_Button = null;
 		public  bool stockToolBarcreated = false;
@@ -47,37 +51,53 @@ namespace CraftImport
 		private static bool appLaucherHidden = true;
 		private static string craftURL = "";
 		private static string newCraftName = "";
+		bool jpgToDelete = false;
+		string convertedJpg = "";
 		//private static string newCkanExecPath = "";
 
 		string instructions = "";
 
 		#if EXPORT
-		#if DEBUG
-		string uploadServer = "http://kerbalx-stage.herokuapp.com";
-		#else
-		//string uploadServer = "https://kerbalx.com";
-		string uploadServer = "https://kerbalx-stage.herokuapp.com";
-		#endif
+
+
+
+		string uploadServer ()
+		{
+			#if false
+			return "http://kerbalx-stage.herokuapp.com";
+			#else
+		if (!System.IO.File.Exists (FileOperations.ROOT_PATH + "GameData/" + CI.MOD_DIR + "devmode.txt")) {
+				return "https://kerbalx.com";
+			} else {
+				Log.Info("devmode.txt exists");
+				return  "http://kerbalx-stage.herokuapp.com";
+			}
+			#endif
+		}
+
 		#endif
 
 		enum downloadStateType
 		{
 			#if EXPORT
 			UPLOAD,
-			UPLOADINPROGRESS,
-			UPLOADCOMPLETED,
-			UPLOADERROR,
+			UPLOAD_FILESELECTION,
+			UPLOAD_IN_PROGRESS,
+			UPLOAD_COMPLETED,
+			UPLOAD_ERROR,
 			ACTIONGROUPS,
-			GETDUPCRAFTLIST,
-			UPDATECRAFTLISTINPROGRESS,
-			SELECTDUPCRAFT,
+			SHOW_WARNING,
+			GET_DUP_CRAFT_LIST,
+			UPDATE_CRAFTLIST_IN_PROGRESS,
+			SELECT_DUP_CRAFT,
+			GET_THUMBNAIL,
 			#endif
 			INACTIVE,
 			GUI,
 			FILESELECTION,
-			INPROGRESS,
+			IN_PROGRESS,
 			COMPLETED,
-			FILEEXISTS,
+			FILE_EXISTS,
 			ERROR}
 
 		;
@@ -173,6 +193,89 @@ namespace CraftImport
 			Log.Info (String.Format ("ListChanged {0}->{1}", styleItems.Items [OldIndex], styleItems.Items [NewIndex]));
 			style = styleItems.Items [NewIndex];
 		}
+
+		public static bool UrlExists (string file, string urlType)
+		{
+			string[] image_types = null;
+			if (urlType == "image")
+				image_types = new string[] { "jpg", "jpeg", "pjped", "png", "bml" };
+
+			//if (urlType == "video")
+			//	image_types = {};
+			bool exists = false;
+			bool b = false;
+
+			// Assume it is an imgur album if lenght == 5
+			if (file.Length == 5)
+				return true;
+
+			// First make sure it starts correctly
+			if (!file.StartsWith ("http://") && !file.StartsWith ("https://") && !file.StartsWith ("ftp://")) {
+				return false;
+			}
+					
+				
+			if (urlType == "video") {
+				// Youtube will only be either http or https
+				if (file.StartsWith ("http://") || file.StartsWith ("https://")) {
+					// http://stackoverflow.com/questions/3652046/c-sharp-regex-to-get-video-id-from-youtube-and-vimeo-by-url
+					Regex YoutubeVideoRegex = new Regex (@"youtu(?:\.be|be\.com)/(?:(.*)v(/|=)|(.*/)?)([a-zA-Z0-9-_]+)", RegexOptions.IgnoreCase);
+
+					Match youtubeMatch = YoutubeVideoRegex.Match (file);
+					return  youtubeMatch.Success;
+				} else
+					return false;
+			}
+			HttpWebResponse response = null;
+			var request = (HttpWebRequest)WebRequest.Create (file);
+			request.Method = "HEAD";
+			request.Timeout = 5000; // milliseconds
+			request.AllowAutoRedirect = true;
+			Log.Info ("before try");
+			try {
+				response = (HttpWebResponse)request.GetResponse ();
+				exists = response.StatusCode == HttpStatusCode.OK;
+				Log.Info ("exists: " + exists.ToString ());
+				if (exists) {
+					if (urlType == "image") {
+						if (file.Contains ("staticflickr.com"))
+							b = image_types.Any (s => file.Contains (s));
+						else {
+							if (file.StartsWith ("http://imgur.com/")) {
+								b = true;
+								exists = response.ContentType.Contains ("text/html");
+							} else {
+								b = image_types.Any (s => response.ResponseUri.ToString ().Contains (s));
+								exists = response.ContentType.Contains ("image");
+							}
+						}
+						exists = exists & b;
+					} else { 
+						
+#if false
+						// urlType == "video"
+						Log.Info("video");
+						Log.Info("ContentType: " + response.ContentType);
+						Log.Info("ResponseUrl: " + response.ResponseUri);
+						exists = response.ResponseUri.ToString().Contains("youtube.com");
+						#endif
+						exists = false;
+					}
+				}
+			} catch {
+				Log.Info ("response.StatusCode: " + response.StatusCode.ToString ());
+				Log.Info ("    status descr: " + response.StatusDescription);
+				exists = false;
+			} finally {
+				// close your response.
+				if (response != null)
+					response.Close ();
+			}
+
+			return exists;
+		}
+
+
 		#endif
 
 
@@ -258,14 +361,45 @@ namespace CraftImport
 			this.visible = visible;
 		}
 
+		void resetBeforeExit()
+		{
+			Log.Info ("resetBeforeExit");
+			if (download != null)
+				download.Dispose ();
+			if (jpgToDelete && convertedJpg != "") {
+				System.IO.FileInfo file = new System.IO.FileInfo (convertedJpg);
+				file.Delete ();
+			}
+			_image = null;
+			download = null;
+			SetVisible (false);
+			GUI.enabled = false;
+			thumbnailInited = false;
+			downloadState = downloadStateType.INACTIVE;
+			RemoveInputLock ();
+
+
+			m_fileBrowser = null;
+			m_textPath = "";
+			craftURL = "";
+			newCraftName = "";
+			saveInSandbox = false;
+			overwriteExisting = false;
+
+//			GUIToggle ();
+
+		}
+
 		bool saveCraftFile (string craftFile)
 		{
 			//Log.Info ("saveCraftFile: " + craftFile);
 			string saveDir = "";
 			if (saveInSandbox) {
-				saveDir = KSPUtil.ApplicationRootPath + "ships";
+//				saveDir = KSPUtil.ApplicationRootPath + "ships";
+				saveDir = FileOperations.ROOT_PATH + "Ships";
 			} else {
-				saveDir = KSPUtil.ApplicationRootPath + "saves/" + HighLogic.SaveFolder + "/ships";
+//				saveDir = KSPUtil.ApplicationRootPath + "saves/" + HighLogic.SaveFolder + "/ships";
+				saveDir = FileOperations.ROOT_PATH + "saves/" + HighLogic.SaveFolder + "/Ships";
 			}
 			//string saveDir = KSPUtil.ApplicationRootPath + sandbox + HighLogic.SaveFolder + "/ships";
 			string saveFile = "";
@@ -299,7 +433,7 @@ namespace CraftImport
 
 
 				if (System.IO.File.Exists (saveFile) && !overwriteExisting) {
-					downloadState = downloadStateType.FILEEXISTS;
+					downloadState = downloadStateType.FILE_EXISTS;
 					return false;
 				}
 
@@ -317,7 +451,7 @@ namespace CraftImport
 		}
 
 
-		WWW download;
+		WWW download = null;
 		bool kerbalx = false;
 
 		System.Collections.IEnumerator doDownloadCraft (string craftURL)
@@ -378,9 +512,9 @@ namespace CraftImport
 							yield   return download;
 
 							// 1. Need to get current ksp directory for ckan, root path ends in a slash
-							string root = KSPUtil.ApplicationRootPath.Substring (0, KSPUtil.ApplicationRootPath.Length - 12);
-							Log.Info ("Root path: " + root);
-							string ckanDir = root + "CKAN";
+							//string root = KSPUtil.ApplicationRootPath.Substring (0, KSPUtil.ApplicationRootPath.Length - 12);
+							Log.Info ("Root path: " + FileOperations.ROOT_PATH);
+							string ckanDir = FileOperations.ROOT_PATH + "CKAN";
 							if (System.IO.Directory.Exists (ckanDir)) {
 								string ckanFile = j ["name"] + ".ckan";
 								Log.Info ("ckanFile: " + ckanFile);
@@ -411,7 +545,7 @@ namespace CraftImport
 							var proc = new Process {
 								StartInfo = new ProcessStartInfo {
 									FileName = CI.configuration.ckanExecPath,
-									Arguments = "list --kspdir \"" + KSPUtil.ApplicationRootPath + "\"" ,
+									Arguments = "list --kspdir \"" + FileOperations.ROOT_PATH + "\"" ,
 									UseShellExecute = false,
 									RedirectStandardOutput = true,
 									CreateNoWindow = true
@@ -447,12 +581,12 @@ namespace CraftImport
 				if (!System.IO.File.Exists (s))
 					s = "http://" + s;
 			}
-			downloadState = downloadStateType.INPROGRESS;
+			downloadState = downloadStateType.IN_PROGRESS;
 			StartCoroutine (doDownloadCraft (s));
 		}
 
 		#if EXPORT
-
+		
 		string uid = "";
 		string pswd = "";
 
@@ -501,6 +635,43 @@ namespace CraftImport
 				savePswd = false;
 		}
 
+		public void ConvertToJPG (string originalFile, string newFile, Color background, int quality = 75)
+		{
+			
+			Texture2D png = new Texture2D (1, 1);
+
+			byte[] pngData = System.IO.File.ReadAllBytes (originalFile);
+			png.LoadImage (pngData);
+
+
+			Color[] srcColors = png.GetPixels ();
+			Color[] dstColors = new Color[srcColors.Length];
+			for (int i = 0; i < srcColors.Length; i++) {
+				Color srcColor = srcColors [i];
+				float a = srcColor.a;
+				if (a == 0.0F) {
+					srcColor = background;
+					srcColor.a = 1.0F;
+				}
+
+				dstColors [i] = new Color (srcColor.r, srcColor.g, srcColor.b, 1.0F);
+			}
+
+			Texture2D result = new Texture2D (png.width, png.height, TextureFormat.ARGB32, false);
+			result.SetPixels (dstColors);
+			result.Apply ();
+			png = result;
+
+
+			byte[] jpgData = png.EncodeToJPG (quality);
+			var file = System.IO.File.Open (newFile, System.IO.FileMode.Create);
+			var binary = new System.IO.BinaryWriter (file);
+			binary.Write (jpgData);
+			file.Close ();
+			Destroy (png);
+			//Resources.UnloadAsset(png);
+		}
+
 		System.Collections.IEnumerator doUploadCraft (string craftURL)
 		{
 			if (craftURL != "") {
@@ -509,60 +680,155 @@ namespace CraftImport
 				if (System.IO.File.Exists (craftURL)) {
 					//craftURL = craftURL.Substring (7);
 
-					Log.Info ("craftURL: " + craftURL);
-					string craft = System.IO.File.ReadAllText (craftURL);
-
 					EditorLogic.LoadShipFromFile (craftURL);
 					ShipConstruct ship = ShipConstruction.LoadShip (craftURL);
 
 					Log.Info ("Craft name: " + ship.shipName);
-					ThumbnailHelper.CaptureThumbnail (ship, 512, "tmp", ship.shipName);
-					string thumbnailPath = KSPUtil.ApplicationRootPath.Substring (0, KSPUtil.ApplicationRootPath.Length - 12) + "/tmp";
+
+					string thumbnailPath;
+					byte[] image = null;
+					bool thumbnail = false;
+				//	bool deleteJpg = false;
+					if (pictureUrl == "") {
+						Log.Info ("Capturing thumbnail");
+						ThumbnailHelper.CaptureThumbnail (ship, 1024, "Screenshots", ship.shipName);
+						thumbnail = true;
+						jpgToDelete = true;
+						pictureUrl = "file://" + FileOperations.ROOT_PATH + "Screenshots/" + ship.shipName + ".png";
+					} else {
+						Log.Info ("pictureUrl nonblank");
+						thumbnailPath = pictureUrl;
+						if (lastSelectedCraft < 0) {
+							//if (pictureUrl == "") {
+							//	uploadErrorMessage = "Picture URL cannot be empty";
+							//	downloadState = downloadStateType.UPLOAD_ERROR;
+							//	yield break;
+							//
+							//}
+
+
+							if (!pictureUrl.StartsWith ("file://") && !UrlExists (pictureUrl, "image")) {
+								uploadErrorMessage = "Picture URL is not valid";
+								downloadState = downloadStateType.UPLOAD_ERROR;
+								yield break;
+							} else
+								pictureUrl = thumbnailPath;
+	
+							if (pictureUrl.StartsWith ("http://imgur.com/") || pictureUrl.Length == 5) {
+								string[] p = pictureUrl.Split ('/');
+								pictureUrl = "[imgur]" + p.Last () + "[/imgur]";
+								Log.Info ("imgur: " + pictureUrl);
+								//	file = "[imgur]" + file + "[/imgur]";
+							}
+
+						}
+
+					}
+					Log.Info ("pictureUrl: " + pictureUrl);
+
+					if (videoUrl != "" && !UrlExists (videoUrl, "video")) {
+						uploadErrorMessage = "Video URL is not a valid YouTube URL";
+						downloadState = downloadStateType.UPLOAD_ERROR;
+						yield break;
+					}
+
+					Log.Info ("craftURL: " + craftURL);
+					string craft = System.IO.File.ReadAllText (craftURL);
 
 					JSONNode jsonuid = uid;
 					JSONNode jsonpswd = pswd;
 					JSONNode jsoncraft = craft;
 
-					Log.Info ("uid: " + uid + "   jsonuid: " + jsonuid);
+					string url = uploadServer () + "/crafts.json";
 
-					string url = uploadServer + "/crafts.json";
-
-					WWWForm form = new WWWForm ();
-
-					form.AddField ("username", jsonuid);
-					form.AddField ("password", jsonpswd);
-					form.AddField ("craft_file", jsoncraft);
+					JSONNode n = JSON.Parse ("{}");
+					n ["username"] = uid;
+					n ["password"] = pswd;
+					n ["craft_file"] = craft;
 					if (tags != "")
-						form.AddField ("tags", tags);
+						n ["tags"] = tags;
 					if (style != "")
-						form.AddField ("style", style);
-					if (pictureUrl != "")
-						form.AddField ("picture_url", pictureUrl);					
-					if (videoUrl != "")
-						form.AddField ("video_url", videoUrl);
-					if (forceNew)
-						form.AddField ("force_new", "true");
-					else {
-						form.AddField ("force_new", "false");
-						if (lastSelectedCraft >= 0)
-							form.AddField ("update_existing", ids [lastSelectedCraft]);
+						n ["style"] = style;
+					Log.Info ("pictureUrl: " + pictureUrl);
+					if (pictureUrl != "") {
+						if (pictureUrl.StartsWith ("file://")) {
+							// If a png file, convert to jpg before uploading
+							if (pictureUrl.EndsWith (".png", StringComparison.OrdinalIgnoreCase)) {
+								string pngToConvert = pictureUrl.Substring (7);
+								convertedJpg = pictureUrl.Substring (7, pictureUrl.Length - 10) + "jpg";
+								Log.Info ("pngToconvert: " + pngToConvert);
+								Log.Info ("convertedJpg: " + convertedJpg);
+
+								ConvertToJPG (pngToConvert, convertedJpg, CI.configuration.backgroundcolor);
+								// Delete the file if we took a snapshot of the craft using the thumbnail function
+								if (thumbnail) {
+									Log.Info ("deleting: " + pngToConvert);
+									System.IO.FileInfo file = new System.IO.FileInfo (pngToConvert);
+									file.Delete ();
+								} 
+							//	deleteJpg = true;
+								jpgToDelete = true;
+								pictureUrl = "file://" + convertedJpg;
+							}
+							Log.Info ("pictureUrl 2: " + pictureUrl.Substring (7));
+							if (System.IO.File.Exists (pictureUrl.Substring (7))) {
+								Log.Info ("pictureUrl exists");
+								image = System.IO.File.ReadAllBytes (pictureUrl.Substring (7));
+								if (image != null) {
+									n ["image"] = System.Convert.ToBase64String (image);
+								}
+								// If this wasn't a thumbnail, and it was converted, delete the jpg
+								// Delete it if it was a thumbnail as well
+						//		if (deleteJpg) {
+						//			System.IO.FileInfo file = new System.IO.FileInfo (pictureUrl.Substring (7));
+						//			file.Delete ();
+						//		}
+							}
+						} else {
+							n ["picture_url"] = pictureUrl;					
+						}
 					}
 
+					if (videoUrl != "")
+						n ["video_url"] = videoUrl;
+					if (forceNew)
+						n ["force_new"] = "true";
+					else {
+						n ["force_new"] = "false";
+						if (lastSelectedCraft >= 0)
+							n ["update_existing"] = ids [lastSelectedCraft];
+					}
+
+					//if (n ["action_groups"].AsInt == 0) {
+					JSONNode a = JSON.Parse ("{}");
 					string hash;
+					bool actionGroupSpecified = false;
 					for (int i = 0; i < 16; i++) {
+						Log.Info ("i: " + i.ToString () + "    [" + actionGroups [i] + "]");
 						actionGroups [i] = actionGroups [i].Trim ();
-						if (actionGroups [i] != "") {
+						if (actionGroups [i] != "")
+							actionGroupSpecified = true;
+						//if (actionGroups [i] != "") 
+						{
 							if (i < 10) {
 								hash = (i + 1).ToString ();
 							} else {
 								hash = fixedActions [i - 10];
 							}
-							form.AddField (hash, actionGroups [i]);
+							a [hash] = actionGroups [i];
 							Log.Info ("Adding field: hash: " + hash + "      value: " + actionGroups [i]);
 						}
 					}
+					//}
+					if (actionGroupSpecified)
+						n ["action_groups"] = a.ToJSON (0);
+					string ns = n.ToJSON (0);
+					//Log.Info ("json:" + ns);
 
-					var upload = new WWW (url, form);
+					Dictionary<string, string> headers = new Dictionary<string, string> ();
+					headers.Add ("Content-Type", "application/json");
+					var upload = new WWW (url, Encoding.ASCII.GetBytes (ns), headers);
+
 					// Wait until the download is done
 					yield   return upload;
 
@@ -571,7 +837,7 @@ namespace CraftImport
 					if (!String.IsNullOrEmpty (upload.error)) {
 						Log.Error ("Error uploading: " + upload.error);
 						uploadErrorMessage = upload.error;
-						downloadState = downloadStateType.UPLOADERROR;
+						downloadState = downloadStateType.UPLOAD_ERROR;
 						yield break;
 					} else {
 
@@ -582,53 +848,62 @@ namespace CraftImport
 							}
 						}
 							
-						downloadState = downloadStateType.UPLOADCOMPLETED;
+						downloadState = downloadStateType.UPLOAD_COMPLETED;
 						craftURL = "";
 						//instructions = upload.text + "\n" + thumbnailPath;
 
 						//if (upload.responseHeaders.Count > 0) {
 						//	for (string entry in upload.responseHeaders) {
 						//		Log.Info(entry.Value + "=" + entry.Key);
+						Log.Info (upload.text);
 						var j = JSON.Parse (upload.text);
+						if (j != null) {
+							if (j ["status"].AsInt == 200) {
+								instructions = "The craft file has been uploaded.\n\nA browser window is being opened where you can edit the uploaded craft";
+								if (j ["image_failed_to_upload "].AsBool == true) {
+									instructions += "\n\nPlease note that the image failed to upload properly due to an Imgur error,\n";
+									instructions += "so you will need to upload an image to Imgur yourself";
+								}
+								string editUrl = uploadServer () + j ["edit_url"];
+								Application.OpenURL (editUrl);
+							} else if (j ["status"].AsInt == 409) {
+								downloadState = downloadStateType.SELECT_DUP_CRAFT;
+								if (j ["existing_craft"].Count == 1)
+									instructions = "There is already an existing craft by that name\n";
+								else
+									instructions = "There are " + j ["existing_craft"].Count.ToString () + " existing crafts by that name\n";
 
-						if (j ["status"].AsInt == 200) {
-							instructions = "The craft file has been imported.\n\nA browser window is being opened where you can edit the uploaded craft";
-							string editUrl = uploadServer + j ["edit_url"];
-							Application.OpenURL (editUrl);
-						} else if (j ["status"].AsInt == 409) {
-							downloadState = downloadStateType.SELECTDUPCRAFT;
-							if (j ["existing_craft"].Count == 1)
-								instructions = "There is already an existing craft by that name\n";
-							else
-								instructions = "There are " + j ["existing_craft"].Count.ToString () + " existing crafts by that name\n";
-
-							ids.Clear ();
-							craftNames.Clear ();
-							//craftUrls.Clear ();
-							selectedCraft.Clear ();
-							lastSelectedCraft = -1;
-							for (int i = 0; i < j ["existing_craft"].Count; i++) {
-								ids.Add (j ["existing_craft"] [i] ["id"]);
-								craftNames.Add (j ["existing_craft"] [i] ["name"]);
-								//craftUrls.Add (j ["existing_craft"] [i] ["url"]);
-								selectedCraft.Add (false);
-								instructions += "\n" + ids [i] + ": " + craftNames [i];
+								ids.Clear ();
+								craftNames.Clear ();
+								//craftUrls.Clear ();
+								selectedCraft.Clear ();
+								lastSelectedCraft = -1;
+								for (int i = 0; i < j ["existing_craft"].Count; i++) {
+									ids.Add (j ["existing_craft"] [i] ["id"]);
+									craftNames.Add (j ["existing_craft"] [i] ["name"]);
+									//craftUrls.Add (j ["existing_craft"] [i] ["url"]);
+									selectedCraft.Add (false);
+									instructions += "\n" + ids [i] + ": " + craftNames [i];
+								}
+							} else if (j ["status"].AsInt == 500) {
+								instructions = "An unknown error occurred:\n\n";
+								instructions += j ["error"];
+								instructions += "\n\nPlease contact KerbalX support for assistance";
+								downloadState = downloadStateType.UPLOAD_ERROR;
+							} else {
+								instructions = "Unknown Error:" + j ["status"].AsInt;
+								downloadState = downloadStateType.UPLOAD_ERROR;
 							}
-						} else if (j ["status"].AsInt == 500) {
-							instructions = "An unknown error occurred:\n\n";
-							instructions += j ["error"];
-							instructions += "\n\nPlease contact KerbalX support for assistance";
-							downloadState = downloadStateType.UPLOADERROR;
 						} else {
-							instructions = "Unknown Error:" + j ["status"].AsInt;
-							downloadState = downloadStateType.UPLOADERROR;
+							instructions = "An unknown server error occurred: ";
+							downloadState = downloadStateType.UPLOAD_ERROR;
 						}
 					}
 					upload.Dispose ();
 					upload = null;
 				} else {
 					instructions = "Error";
-					downloadState = downloadStateType.UPLOADERROR;
+					downloadState = downloadStateType.UPLOAD_ERROR;
 				}
 			}
 		}
@@ -638,7 +913,7 @@ namespace CraftImport
 			saveUidPswd ();
 			uploadProgress = 0;
 			lastUpdate = Time.realtimeSinceStartup;
-			downloadState = downloadStateType.UPLOADINPROGRESS;
+			downloadState = downloadStateType.UPLOAD_IN_PROGRESS;
 			StartCoroutine (doUploadCraft (craftURL));
 		}
 
@@ -646,7 +921,7 @@ namespace CraftImport
 		System.Collections.IEnumerator doGetUpdateCraftList ()
 		{
 			if (uid != "") {
-				string url = uploadServer + "/" + uid + ".json";
+				string url = uploadServer () + "/" + uid + ".json";
 
 				var upload = new WWW (url);
 				// Wait until the download is done
@@ -658,7 +933,7 @@ namespace CraftImport
 				if (!String.IsNullOrEmpty (upload.error)) {
 					Log.Error ("Error uploading: " + upload.error);
 					uploadErrorMessage = upload.error;
-					downloadState = downloadStateType.UPLOADERROR;
+					downloadState = downloadStateType.UPLOAD_ERROR;
 					yield break;
 				} else {
 					Log.Info ("json: " + upload.text);
@@ -673,23 +948,13 @@ namespace CraftImport
 						Log.Info ("c count: " + j ["craft"].Count);
 						foreach (var key in j["craft"].Keys) {
 							Log.Info ("key: " + key);
-							Log.Info("data: " + j["craft"][key].ToString());
+							Log.Info ("data: " + j ["craft"] [key].ToString ());
 							ids.Add (key);
-							craftNames.Add (j["craft"][key].ToString());
+							craftNames.Add (j ["craft"] [key].ToString ());
 							selectedCraft.Add (false);
 						}
-						downloadState = downloadStateType.SELECTDUPCRAFT;
+						downloadState = downloadStateType.SELECT_DUP_CRAFT;
 
-					#if false
-					} else if (j ["status"].AsInt == 500) {
-						instructions = "An unknown error occurred:\n\n";
-						instructions += j ["error"];
-						instructions += "\n\nPlease contact KerbalX support for assistance";
-						downloadState = downloadStateType.UPLOADERROR;
-					} else {
-						instructions = "Unknown Error:" + j ["status"].AsInt;
-						downloadState = downloadStateType.UPLOADERROR;
-		#endif
 					}
 					
 				}
@@ -700,7 +965,7 @@ namespace CraftImport
 
 		void getUpdateCraftList ()
 		{
-			downloadState = downloadStateType.UPDATECRAFTLISTINPROGRESS;
+			downloadState = downloadStateType.UPDATE_CRAFTLIST_IN_PROGRESS;
 			StartCoroutine (doGetUpdateCraftList ());
 		}
 		#endif
@@ -717,7 +982,7 @@ namespace CraftImport
 			m_fileImage;
 		private string selectionType;
 
-		void getFile (string title, string suffix)
+		void getFile (string title, string suffix, string dir = "")
 		{
 			fileBrowserEnabled = true;
 			selectionType = suffix;
@@ -757,8 +1022,13 @@ namespace CraftImport
 			m_fileBrowser.showDrives = CI.configuration.showDrives;
 			m_fileBrowser.ShowNonmatchingFiles = false;
 
-			if (m_textPath != "")
-				m_fileBrowser.SetNewDirectory (m_textPath);
+
+			if (dir != "") {
+				m_fileBrowser.SetNewDirectory (dir);
+			} else {
+				if (m_textPath != "")
+					m_fileBrowser.SetNewDirectory (m_textPath);
+			}
 
 			#if false
 			}
@@ -795,18 +1065,48 @@ namespace CraftImport
 		{
 			m_fileBrowser = null;
 			fileBrowserEnabled = false;
-			downloadState = downloadStateType.GUI;
+
 
 			m_textPath = path;
 			if (m_textPath != "" && m_textPath != null) {
 				if (selectionType == ".craft") {
+					#if EXPORT
+					if (downloadState == downloadStateType.UPLOAD_FILESELECTION)
+						downloadState = downloadStateType.UPLOAD;
+					else
+					#endif
+					downloadState = downloadStateType.GUI;
 					craftURL = "file://" + m_textPath;
 					CI.configuration.lastImportDir = System.IO.Path.GetDirectoryName (m_textPath);
+					return;
 				}
-
 			}
+			if (m_textPath != "" && m_textPath != null) {
+				if (selectionType == ".png|.jpg") {
+					#if EXPORT
+					downloadState = downloadStateType.UPLOAD;
+					pictureUrl = "file://" + m_textPath;
+					#endif
+					//CI.configuration.lastImportDir = System.IO.Path.GetDirectoryName (m_textPath);
+					return;
+				}
+			}
+			Log.Info ("downloadState: " + downloadState.ToString ());
+
+			downloadState = downloadStateType.GUI;
 		}
 
+
+
+		internal void RemoveInputLock ()
+		{
+			if (InputLockManager.GetControlLock ("CraftImportLock") != ControlTypes.None) {
+				//LogFormatted_DebugOnly("Removing-{0}", "TWPControlLock");
+				InputLockManager.RemoveControlLock ("CraftImportLock");
+			}
+			Input.ResetInputAxes ();
+			//InputLockExists = false;
+		}
 
 		/////////////////////////////////////
 		public void OnGUI ()
@@ -814,6 +1114,10 @@ namespace CraftImport
 			#if EXPORT
 			Awake ();
 			#endif
+
+			//	InputLockManager.SetControlLock((ControlTypes.EDITOR_LOCK | ControlTypes.EDITOR_GIZMO_TOOLS), "CraftImportLock");
+
+
 			if (m_fileBrowser != null) {
 				if (!fileBrowserEnabled) {
 					
@@ -847,12 +1151,696 @@ namespace CraftImport
 
 			try {
 				if (this.Visible ()) {
-					Rect bounds2 = GUILayout.Window (GetInstanceID (), bounds, Window, CI.TITLE, HighLogic.Skin.window);
+//					Rect bounds2 = GUILayout.Window (GetInstanceID (), bounds, Window, CI.TITLE, HighLogic.Skin.window);
+					if (resetWinPos)
+					{
+						bounds = new Rect (Screen.width - WIDTH, Screen.height / 2 - HEIGHT / 2, WIDTH, HEIGHT);
+						resetWinPos = false;
+					}
+					bounds = GUILayout.Window (GetInstanceID (), bounds, Window, CI.TITLE, HighLogic.Skin.window);
+					if (_image != null) {
+						imgbounds = new Rect (imgbounds.xMin, imgbounds.yMin, displayres, displayres + 30);
+						imgbounds = GUILayout.Window (GetInstanceID () + 1, imgbounds, imgWindow, CI.TITLE + " Upload Image Preview", HighLogic.Skin.window);
+					}
+					
 				}
 			} catch (Exception e) {
 				Log.Error ("exception: " + e.Message);
 			}
 		}
+		#if EXPORT
+		void  uploadCase ()
+		{
+			if (craftURL.StartsWith ("file://"))
+				craftURL = craftURL.Substring (7);
+			if (System.IO.File.Exists (craftURL)) {
+
+				// Need to add the following:
+
+				//tags (space separated string), 
+				//style (string, one of [ship aircraft spaceplane lander satellite station base probe rover lifter], if none provided will default to 'ship') *1
+				//description (string, additional text about the craft, KX will also read the description from the craft file)
+				//action_groups (hash of group_name => string-description only the keys [abort gears brakes lights RCS SAS 0, 1..9] will be read)
+				//video_url (string with url to youtube vid, I don't have support for other video sites yet)
+
+				//	update_existing (boolean, default false. If true and that user has a craft with the same name, KX will update the existing craft rather than creating a new one.  In this case providing pictures will be optional). *2
+
+				GUILayout.BeginHorizontal ();
+				GUILayout.Label ("Craft File:");
+				GUILayout.FlexibleSpace ();
+				//GUILayout.EndHorizontal ();
+				//GUILayout.BeginHorizontal ();
+				GUILayout.FlexibleSpace ();
+				var styleLabel = new GUIStyle (GUI.skin.label);
+				styleLabel.normal.textColor = Color.green;
+				GUILayout.Label (craftURL, styleLabel);
+				GUILayout.EndHorizontal ();
+
+				GUILayout.BeginHorizontal ();
+				GUILayout.Label ("Tags:");
+				GUILayout.FlexibleSpace ();
+				tags = GUILayout.TextField (tags, GUILayout.MinWidth (50F), GUILayout.MaxWidth (300F));
+				GUILayout.EndHorizontal ();
+
+
+				//this draws the transparent catching button that stops items behind the listbox getting events - and does the actual selection of listitems
+				styleItems.DrawBlockingSelector ();
+
+				GUILayout.BeginHorizontal ();
+				GUILayout.Label ("Style:");
+				GUILayout.FlexibleSpace ();
+				
+#if true
+				//This draws the button and displays/hides the listbox - returns true if someone clicked the button
+				if (styleItems.styleListSelectedItem == null)
+					DrawCall ();
+				styleItems.DrawButton ();
+				#endif
+				GUILayout.FlexibleSpace ();
+				//style = GUILayout.TextField (style, GUILayout.MinWidth (50F), GUILayout.MaxWidth (150F));
+				GUILayout.EndHorizontal ();
+
+				//These two go at the end so the dropdown is drawn over the other controls, and closes the dropdown if someone clicks elsewhere in the window
+				styleItems.DrawDropDown ();
+				styleItems.CloseOnOutsideClick ();
+
+				if (!styleItems.ListVisible) {
+					GUILayout.BeginHorizontal ();
+
+#if false
+					styleLabel.normal.textColor = Color.yellow;
+					GUILayout.Label ("Picture or Imgur album url:", styleLabel);
+					
+#else
+					GUILayout.FlexibleSpace ();
+					if (GUILayout.Button ("Picture or Imgur album url:")) {
+						downloadState = downloadStateType.FILESELECTION;
+						if (m_textPath == null)
+							m_textPath = "";
+						if (m_textPath.Contains (".png") || m_textPath.Contains (".jpg"))
+							m_textPath = System.IO.Path.GetDirectoryName (m_textPath);
+						getFile ("Enter Craft File", ".png|.jpg", FileOperations.ROOT_PATH + "/screenshots");
+					}
+#endif
+					GUILayout.FlexibleSpace ();
+
+					pictureUrl = GUILayout.TextField (pictureUrl, GUILayout.Width (300F));
+
+
+					GUILayout.EndHorizontal ();
+					GUILayout.BeginHorizontal ();
+					if (GUILayout.Button ("Generate a custom snapshot", GUILayout.Width (200F))) {
+						downloadState = downloadStateType.GET_THUMBNAIL;
+
+					}
+					GUILayout.EndHorizontal ();
+					GUILayout.BeginHorizontal ();
+					GUILayout.Label ("Video url:");
+					GUILayout.FlexibleSpace ();
+
+					videoUrl = GUILayout.TextField (videoUrl, GUILayout.Width (300F));
+					GUILayout.EndHorizontal ();
+
+					GUILayout.BeginHorizontal ();
+					GUILayout.FlexibleSpace ();
+					if (GUILayout.Button ("Action Groups Descriptions", GUILayout.Width (250.0f))) {
+						downloadState = downloadStateType.ACTIONGROUPS;
+					}
+					GUILayout.FlexibleSpace ();
+					GUILayout.EndHorizontal ();
+
+					GUILayout.BeginHorizontal ();
+					GUILayout.Label ("Force new upload (if existing):");
+					GUILayout.FlexibleSpace ();
+
+					forceNew = GUILayout.Toggle (forceNew, "");
+					GUILayout.FlexibleSpace ();
+					if (!forceNew) {
+						if (lastSelectedCraft >= 0) {
+							GUILayout.Label ("Craft update id: " + ids [lastSelectedCraft]);
+						} else {
+							GUILayout.FlexibleSpace ();
+							var styleButton = new GUIStyle (GUI.skin.label);
+							styleButton = new GUIStyle (GUI.skin.button);
+							if (uid == "" || pswd == "")
+								styleButton.normal.textColor = Color.gray;
+							if (GUILayout.Button ("Select Existing Craft to Replace", styleButton, GUILayout.Width (250.0f))) {
+								if (uid != "" && pswd != "")
+									downloadState = downloadStateType.GET_DUP_CRAFT_LIST;
+							}
+
+						}
+					} else {
+						GUILayout.FlexibleSpace ();
+						GUILayout.Label ("", GUILayout.Width (250.0f));
+					}
+
+
+					GUILayout.EndHorizontal ();
+
+					GUILayout.BeginHorizontal ();
+					GUILayout.Label ("");
+					GUILayout.EndHorizontal ();
+
+					DrawTitle ("KerbalX Info");
+
+					GUILayout.BeginHorizontal ();
+					GUILayout.Label ("Enter userid:", styleLabel);
+
+					
+#if true
+					GUILayout.FlexibleSpace ();
+					uid = GUILayout.TextField (uid, GUILayout.Width (150F));
+
+
+
+					GUILayout.Label ("", GUILayout.Width (20F));
+					GUILayout.Label ("Save userid:", GUILayout.Width (100F));
+					saveUid = GUILayout.Toggle (saveUid, "");
+
+
+					GUILayout.EndHorizontal ();
+
+
+					GUILayout.BeginHorizontal ();
+					GUILayout.Label ("Enter password:", styleLabel);
+					GUILayout.FlexibleSpace ();
+
+					pswd = GUILayout.PasswordField (pswd, '*', 25, GUILayout.Width (150F));
+					GUILayout.Label ("", GUILayout.Width (20F));
+					GUILayout.Label ("Save password:", GUILayout.Width (100F));
+
+					if (!saveUid)
+						savePswd = false;
+
+					savePswd = GUILayout.Toggle (savePswd, "");
+					GUILayout.EndHorizontal ();
+
+					GUILayout.BeginHorizontal ();
+					GUILayout.Label ("");
+					GUILayout.EndHorizontal ();
+
+					GUILayout.BeginHorizontal ();
+					GUILayout.FlexibleSpace ();
+					if (GUILayout.Button ("Upload to KerbalX", GUILayout.Width (125.0f))) {
+						if (CI.configuration.showWarning &&
+						    (pictureUrl == "" || pictureUrl.StartsWith ("file://"))) {
+							downloadState = downloadStateType.SHOW_WARNING;
+						} else
+						{
+							_image = null;
+							uploadCraft (craftURL);
+						}
+					}
+
+					GUILayout.FlexibleSpace ();
+					#endif
+				}
+			} else {
+				GUILayout.BeginHorizontal ();
+				GUILayout.Label ("Craft File does not exist: ");
+				GUILayout.FlexibleSpace ();
+				//GUILayout.EndHorizontal ();
+				//GUILayout.BeginHorizontal ();
+				GUILayout.FlexibleSpace ();
+				GUILayout.Label (craftURL);
+				GUILayout.EndHorizontal ();
+				GUILayout.BeginHorizontal ();
+			}
+			if (!styleItems.ListVisible) {
+				if (GUILayout.Button ("Cancel", GUILayout.Width (125.0f))) {
+					resetBeforeExit ();
+					GUIToggle ();
+				}
+				GUILayout.FlexibleSpace ();
+
+				GUILayout.EndHorizontal ();
+			}
+		}
+
+		void selectDupCraftCase ()
+		{
+			GUILayout.BeginHorizontal ();
+			GUILayout.Label ("Select Craft to replace");
+			GUILayout.FlexibleSpace ();
+			GUILayout.EndHorizontal ();
+
+			GUILayout.BeginHorizontal ();
+			GUILayout.Label ("KerbalX id", GUILayout.Width (90F));
+			GUILayout.FlexibleSpace ();
+			GUILayout.Label ("Craft Name (clickable URL)");
+			GUILayout.FlexibleSpace ();
+			GUILayout.Label ("Select");
+			GUILayout.EndHorizontal ();
+
+			GUILayout.BeginHorizontal ();
+
+			buildMenuScrollPosition = GUILayout.BeginScrollView (buildMenuScrollPosition, GUILayout.Width (WIDTH - 30), GUILayout.Height (HEIGHT * 2 / 3));
+			GUILayout.BeginVertical ();
+
+
+			for (int i = 0; i < craftNames.Count; i++) {
+				GUILayout.BeginHorizontal ();
+
+				GUILayout.Label (ids [i] + ":", GUILayout.Width (90F));
+				GUILayout.FlexibleSpace ();
+				if (GUILayout.Button (craftNames [i])) {
+					//Application.OpenURL (uploadServer + craftUrls [i]);
+					Application.OpenURL (uploadServer () + "/crafts/" + ids [i]);
+				}
+				
+#if false
+				// Get the last rect to display the line
+				var lastRect = GUILayoutUtility.GetLastRect();
+				lastRect.y += lastRect.height - 2; // Vertical alignment of the underline
+				lastRect.height = 2; // Thickness of the line
+				GUI.Box(lastRect, "");
+				#endif
+				GUILayout.FlexibleSpace ();
+				if (lastSelectedCraft >= 0 && lastSelectedCraft != i)
+					selectedCraft [i] = false;
+
+				selectedCraft [i] = GUILayout.Toggle (selectedCraft [i], "");
+				if (selectedCraft [i] && i != lastSelectedCraft)
+					lastSelectedCraft = i;
+
+				GUILayout.EndHorizontal ();
+			}
+			GUILayout.EndVertical ();
+			GUILayout.EndScrollView (); 
+			GUILayout.EndHorizontal ();
+
+			GUILayout.BeginHorizontal ();
+			GUILayout.Label ("");
+			GUILayout.EndHorizontal ();
+			GUILayout.BeginHorizontal ();
+			GUILayout.FlexibleSpace ();
+			if (lastSelectedCraft >= 0) {
+				if (GUILayout.Button ("OK", GUILayout.Width (125.0f))) {
+					downloadState = downloadStateType.UPLOAD;
+				} 
+			} else {
+				if (GUILayout.Button ("Cancel", GUILayout.Width (125.0f))) {
+					downloadState = downloadStateType.UPLOAD;
+				}
+			}
+
+			GUILayout.FlexibleSpace ();
+
+			GUILayout.EndHorizontal ();
+		}
+
+		void warningCase ()
+		{
+			GUILayout.BeginHorizontal ();
+			GUILayout.Label ("Image Upload Warning");
+			GUILayout.FlexibleSpace ();
+			GUILayout.EndHorizontal ();
+			GUILayout.BeginHorizontal ();
+			GUILayout.Label ("");
+			GUILayout.EndHorizontal ();
+
+
+			GUILayout.BeginHorizontal ();
+			GUILayout.Label ("Images uploaded with this mod will be uploaded to Imgur.");
+			GUILayout.EndHorizontal ();
+
+			GUILayout.BeginHorizontal ();
+			GUILayout.Label ("Once uploaded, they CANNOT be deleted.");
+			GUILayout.EndHorizontal ();
+
+			GUILayout.BeginHorizontal ();
+			GUILayout.Label ("");
+			GUILayout.EndHorizontal ();
+
+			GUILayout.BeginHorizontal ();
+			GUILayout.FlexibleSpace ();
+			if (GUILayout.Button ("OK", GUILayout.Width (125.0f))) {
+				uploadCraft (craftURL);
+			}
+
+			GUILayout.FlexibleSpace ();
+			if (GUILayout.Button ("Cancel", GUILayout.Width (125.0f))) {
+				downloadState = downloadStateType.GUI;
+			}
+			GUILayout.FlexibleSpace ();
+			GUILayout.EndHorizontal ();
+			GUILayout.BeginHorizontal ();
+			GUILayout.Label ("");
+			GUILayout.EndHorizontal ();
+
+			GUILayout.BeginHorizontal ();
+			GUILayout.Label ("");
+			GUILayout.EndHorizontal ();
+
+
+			GUILayout.BeginHorizontal ();
+			GUILayout.Label ("Show this warning in the future:");
+			GUILayout.FlexibleSpace ();
+			CI.configuration.showWarning = GUILayout.Toggle (CI.configuration.showWarning, "");
+			GUILayout.FlexibleSpace ();
+			GUILayout.EndHorizontal ();
+
+		}
+
+		int newresolution = 1024;
+		int displayres = 512;
+		float newelevation = 0, newazimuth = 0, newpitch = 0, newheading = 0, newfov = 0;
+		bool thumbnailInited = false;
+		ShipConstruct ship;
+		string facility;
+		Texture2D _image = null;
+
+		Rect imgbounds = new Rect (20, 20, 512, 512 + 30);
+
+		void imgWindow (int id)
+		{
+			GUILayout.BeginHorizontal ();
+			GUI.DrawTexture (new Rect (0f, 30f, displayres, displayres), _image, ScaleMode.ScaleToFit, true, 0f);
+			GUILayout.EndHorizontal ();
+			GUI.DragWindow ();
+		}
+
+		void getThumbnailcase ()
+		{
+			if (System.IO.File.Exists (craftURL)) {
+
+				if (!thumbnailInited) {
+					thumbnailInited = true;
+					_image = null;
+					displayres = 512;
+					EditorLogic.LoadShipFromFile (craftURL);
+					ship = ShipConstruction.LoadShip (craftURL);
+					Log.Info ("Ship loaded");
+
+					if (ship.shipFacility != EditorFacility.VAB) {
+						facility = "SPH";
+						newresolution = CI.configuration.sphResolution;
+						newelevation = CI.configuration.sphElevation;
+						newazimuth = CI.configuration.sphAzimuth;
+						newpitch = CI.configuration.sphPitch;
+						newheading = CI.configuration.sphHeading;
+						newfov = CI.configuration.sphFov;
+					} else {
+						facility = "VAB";
+						newresolution = CI.configuration.vabResolution;
+						newelevation = CI.configuration.vabElevation;
+						newazimuth = CI.configuration.vabAzimuth;
+						newpitch = CI.configuration.vabPitch;
+						newheading = CI.configuration.vabHeading;
+						newfov = CI.configuration.vabFov;
+					}
+				}
+
+				GUILayout.BeginHorizontal ();
+				GUILayout.Label ("Create Craft image: ");
+
+				GUILayout.FlexibleSpace ();
+				var styleLabel = new GUIStyle (GUI.skin.label);
+				styleLabel.normal.textColor = Color.green;
+				GUILayout.Label (ship.shipName, styleLabel);
+				GUILayout.FlexibleSpace ();
+				//GUILayout.FlexibleSpace ();
+				GUILayout.EndHorizontal ();
+
+				GUILayout.BeginHorizontal ();
+				GUILayout.Label ("");
+				GUILayout.EndHorizontal ();
+
+				GUILayout.BeginHorizontal ();
+				GUILayout.Label ("Display Resolution(" + displayres.ToString () + "):");
+				GUILayout.FlexibleSpace ();
+				displayres = (int)GUILayout.HorizontalSlider (displayres, 256, 1024, GUILayout.Width (300F));
+				if (displayres > newresolution)
+					newresolution = displayres;
+				GUILayout.EndHorizontal ();
+
+
+				GUILayout.BeginHorizontal ();
+				GUILayout.Label ("Image Resolution(" + newresolution.ToString () + "):");
+				GUILayout.FlexibleSpace ();
+				newresolution = (int)GUILayout.HorizontalSlider (newresolution, 256, 1024, GUILayout.Width (300F));
+				GUILayout.EndHorizontal ();
+
+				GUILayout.BeginHorizontal ();
+				GUILayout.Label ("Elevation (" + newelevation.ToString () + " degrees):");
+				GUILayout.FlexibleSpace ();
+				newelevation = GUILayout.HorizontalSlider (newelevation, 0, 90, GUILayout.Width (300F));
+				GUILayout.EndHorizontal ();
+
+				GUILayout.BeginHorizontal ();
+				GUILayout.Label ("Azimuth (" + newazimuth.ToString () + " degrees):");
+				GUILayout.FlexibleSpace ();
+				newazimuth = GUILayout.HorizontalSlider (newazimuth, 0, 259, GUILayout.Width (300F));
+				GUILayout.EndHorizontal ();
+
+				GUILayout.BeginHorizontal ();
+				GUILayout.Label ("Pitch (" + newpitch.ToString () + " degrees):");
+				GUILayout.FlexibleSpace ();
+				newpitch = GUILayout.HorizontalSlider (newpitch, 0, 90, GUILayout.Width (300F));
+				GUILayout.EndHorizontal ();
+
+				GUILayout.BeginHorizontal ();
+				GUILayout.Label ("Heading (" + newheading.ToString () + " degrees):");
+				GUILayout.FlexibleSpace ();
+				newheading = GUILayout.HorizontalSlider (newheading, 0, 259, GUILayout.Width (300F));
+				GUILayout.EndHorizontal ();
+
+				GUILayout.BeginHorizontal ();
+				GUILayout.Label ("FOV (" + newfov.ToString () + "):");
+				GUILayout.FlexibleSpace ();
+				newfov = GUILayout.HorizontalSlider (newfov, 0.25F, 3.0F, GUILayout.Width (300F));
+				GUILayout.EndHorizontal ();
+
+				GUILayout.BeginHorizontal ();
+				GUILayout.Label ("");
+				GUILayout.EndHorizontal ();
+
+
+				GUILayout.BeginHorizontal ();
+				 styleLabel = new GUIStyle (GUI.skin.label);
+				styleLabel.normal.textColor = CI.configuration.backgroundcolor;
+				GUILayout.Label ("Click on desired background color:",styleLabel);
+				GUILayout.FlexibleSpace ();
+				GUILayout.BeginArea (new Rect (250, 250, colorPickerImageWidth, colorPickerImageHeight));
+				if (GUILayout.RepeatButton (colorPicker, GUILayout.Width (colorPickerImageWidth), GUILayout.Height (colorPickerImageHeight))) {
+					Vector2 pickpos = Event.current.mousePosition;
+					int aaa = Convert.ToInt32 (pickpos.x ) *  colorPicker.width / colorPickerImageWidth;
+					int bbb = Convert.ToInt32 (pickpos.y) * colorPicker.height / colorPickerImageHeight;
+					Color col = colorPicker.GetPixel ( aaa,  colorPicker.height - bbb);
+
+					// "col" is the color value that Unity is returning.
+					// Here you would do something with this color value, like
+					// set a model's material tint value to this color to have it change
+					// colors, etc, etc.
+					//
+					Log.Info ("Mouse position: " + pickpos.x.ToString() +"," + pickpos.y.ToString()  + "   col: " + col.ToString ());
+					CI.configuration.backgroundcolor = col;
+				}
+				GUILayout.EndArea ();
+				GUILayout.FlexibleSpace ();
+				GUILayout.EndHorizontal ();
+				GUILayout.BeginHorizontal ();
+				GUILayout.Label ("");
+				GUILayout.EndHorizontal ();
+				GUILayout.BeginHorizontal ();
+				if (GUILayout.Button ("Generate Craft Image", GUILayout.Width (150.0f))) {
+					
+					ThumbnailHelper.CaptureThumbnail (ship, newresolution, newelevation, newazimuth, newpitch, newheading, newfov,
+						"screenshots", ship.shipName);
+					pictureUrl = "file://" + FileOperations.ROOT_PATH + "Screenshots/" + ship.shipName + ".png";
+					jpgToDelete = true;
+					string pngToConvert = pictureUrl.Substring (7);
+					convertedJpg = pictureUrl.Substring (7, pictureUrl.Length - 10) + "jpg";
+					Log.Info ("pngToconvert: " + pngToConvert);
+					Log.Info ("convertedJpg: " + convertedJpg);
+					ConvertToJPG (pngToConvert, convertedJpg, CI.configuration.backgroundcolor);
+					System.IO.FileInfo file = new System.IO.FileInfo (pngToConvert);
+					file.Delete ();
+
+					if (_image == null)
+						resetWinPos = true;
+					byte[] fileData = System.IO.File.ReadAllBytes (convertedJpg);
+					_image = new Texture2D (2, 2);
+					_image.LoadImage (fileData); //..this will auto-resize the texture dimensions.
+
+					Log.Info ("image.width: " + _image.width + "   image.height: " + _image.height);
+					//GUI.DrawTexture(new Rect(0f, 20f, 512, 512), _image, ScaleMode.ScaleToFit, true, 0f);
+					//GUILayout.Box (_image);
+				}
+				GUILayout.EndHorizontal ();
+				GUILayout.BeginHorizontal ();
+
+				if (GUILayout.Button ("Reset to " + facility + " Defaults", GUILayout.Width (150.0f))) {
+					thumbnailInited = false;
+					if (ship.shipFacility != EditorFacility.VAB) {
+						CI.configuration.setDefaultSPHResolution ();
+					} else {
+						CI.configuration.setDefaultVABResolution ();
+					}
+
+				}
+				GUILayout.FlexibleSpace ();
+				GUILayout.EndHorizontal ();
+
+
+				GUILayout.BeginHorizontal ();
+				if (GUILayout.Button ("Ok", GUILayout.Width (125.0f))) {
+					downloadState = downloadStateType.UPLOAD;
+					pictureUrl = pictureUrl.Substring (0, pictureUrl.Length - 3) + "jpg";
+				}
+				GUILayout.EndHorizontal ();
+				GUILayout.BeginHorizontal ();
+
+				if (GUILayout.Button ("Cancel", GUILayout.Width (125.0f))) {
+					pictureUrl = "";
+					_image = null;
+					downloadState = downloadStateType.UPLOAD;
+				}
+				GUILayout.FlexibleSpace ();
+				GUILayout.EndHorizontal ();
+
+			}
+		}
+		#endif
+
+		void guiCase ()
+		{
+			GUILayout.BeginHorizontal ();
+			GUILayout.Label ("Enter Craft URL:");
+			GUILayout.FlexibleSpace ();
+			//GUILayout.EndHorizontal ();
+
+			//GUILayout.BeginHorizontal ();
+			GUILayout.FlexibleSpace ();
+			craftURL = GUILayout.TextField (craftURL, GUILayout.MinWidth (50F), GUILayout.MaxWidth (300F));
+			GUILayout.EndHorizontal ();
+
+			GUILayout.BeginHorizontal ();
+			GUILayout.Label ("Rename craft to:");
+			GUILayout.FlexibleSpace ();
+			//GUILayout.EndHorizontal ();
+			//GUILayout.BeginHorizontal ();
+			GUILayout.FlexibleSpace ();
+			newCraftName = GUILayout.TextField (newCraftName, GUILayout.MinWidth (50F), GUILayout.MaxWidth (300F));
+			GUILayout.EndHorizontal ();
+
+			GUILayout.BeginHorizontal ();
+			GUILayout.Label ("Save in sandbox directory:");
+			GUILayout.FlexibleSpace ();
+			saveInSandbox = GUILayout.Toggle (saveInSandbox, "");
+			GUILayout.EndHorizontal ();
+
+			GUILayout.BeginHorizontal ();
+			GUILayout.Label ("Overwrite existing file if exists:");
+			GUILayout.FlexibleSpace ();
+			overwriteExisting = GUILayout.Toggle (overwriteExisting, "");
+			GUILayout.EndHorizontal ();
+
+			GUILayout.BeginHorizontal ();
+			GUILayout.Label (" ");
+			GUILayout.EndHorizontal ();
+
+
+			GUILayout.BeginHorizontal ();
+			if (GUILayout.Button ("Select Local File", GUILayout.Width (125.0f))) {
+				downloadState = downloadStateType.FILESELECTION;
+				if (m_textPath == null) {
+					m_textPath = FileOperations.ROOT_PATH + "saves/" + HighLogic.SaveFolder + "/Ships";
+					if (EditorDriver.editorFacility == EditorFacility.VAB)
+						m_textPath += "/VAB";
+					if (EditorDriver.editorFacility == EditorFacility.SPH)
+						m_textPath += "/SPH";
+					
+				}
+				Log.Info ("m_textPath: " + m_textPath);
+				if (m_textPath.Contains (".craft"))
+					m_textPath = System.IO.Path.GetDirectoryName (m_textPath);
+				getFile ("Enter Craft File", ".craft");
+			}
+			GUILayout.EndHorizontal ();
+
+			GUILayout.BeginHorizontal ();
+			GUILayout.EndHorizontal ();
+
+			GUILayout.BeginHorizontal ();
+			if (GUILayout.Button ("Import", GUILayout.Width (125.0f))) {
+				if (craftURL != "")
+					downloadCraft (craftURL);
+			}
+
+
+			GUILayout.FlexibleSpace ();
+			if (GUILayout.Button ("Cancel", GUILayout.Width (125.0f))) {
+				resetBeforeExit ();
+				GUIToggle ();
+			}
+
+			GUILayout.EndHorizontal ();
+
+			GUILayout.BeginHorizontal ();
+
+			#if EXPORT
+			GUILayout.FlexibleSpace ();
+			if (GUILayout.Button ("Upload to KerbalX", GUILayout.Width (125.0f))) {
+				//if (craftURL == "" || craftURL == null) {
+				downloadState = downloadStateType.UPLOAD_FILESELECTION;
+				//	if (m_textPath == null)
+				m_textPath = FileOperations.ROOT_PATH + "saves/" + HighLogic.SaveFolder + "/Ships";
+				if (EditorDriver.editorFacility == EditorFacility.VAB)
+					m_textPath += "/VAB/";
+				if (EditorDriver.editorFacility == EditorFacility.SPH)
+					m_textPath += "/SPH/";
+				//	if (m_textPath.Contains (".craft"))
+				//		m_textPath = System.IO.Path.GetDirectoryName (m_textPath);
+				Log.Info ("m_textPath: " + m_textPath);
+				getFile ("Enter Craft File", ".craft");
+				//	}else
+
+				//downloadState = downloadStateType.UPLOAD;
+				getUidPswd ();
+			}
+			GUILayout.FlexibleSpace ();
+			#else
+			GUILayout.Label (" ");
+			#endif
+			GUILayout.EndHorizontal ();
+
+			GUILayout.BeginHorizontal ();
+			DrawTitle ("Options");
+			GUILayout.EndHorizontal ();
+			#if false
+			GUILayout.BeginHorizontal ();
+			if (GUILayout.Button ("CKAN path", GUILayout.Width (125.0f))) {
+			downloadState = downloadStateType.FILESELECTION;
+
+			m_textPath = newCkanExecPath;
+
+			// Linux change needed
+			getFile ("Select CKAN Executable", ".exe");
+			}
+
+			GUILayout.FlexibleSpace ();
+			newCkanExecPath = GUILayout.TextField (newCkanExecPath, GUILayout.MinWidth (200F), GUILayout.MaxWidth (300F));
+			GUILayout.EndHorizontal ();
+			#endif
+			GUILayout.BeginHorizontal ();
+			GUILayout.Label ("Use Blizzy Toolbar if available:");
+			GUILayout.FlexibleSpace ();
+			newUseBlizzyToolbar = GUILayout.Toggle (newUseBlizzyToolbar, "");
+			GUILayout.EndHorizontal ();
+			if (Application.platform == RuntimePlatform.WindowsPlayer) {
+				GUILayout.BeginHorizontal ();
+				GUILayout.Label ("Show drive letters in file selection dialog:");
+				GUILayout.FlexibleSpace ();
+				CI.configuration.showDrives = GUILayout.Toggle (CI.configuration.showDrives, "");
+				GUILayout.EndHorizontal ();
+			}
+		}
+
+		int colorPickerImageWidth = 150;
+		int colorPickerImageHeight = 150;
+		Texture2D colorPicker;
 
 		private void Window (int id)
 		{
@@ -862,14 +1850,22 @@ namespace CraftImport
 				//newShowDrives = CI.configuration.showDrives;
 				//newCkanExecPath = CI.configuration.ckanExecPath;
 				craftURL = "";
+				m_textPath = "";
 				saveInSandbox = false;
 				overwriteExisting = false;
 				m_textPath = CI.configuration.lastImportDir;
-				#if EXPORT
-				for (int i = 0; i < actionGroups.Length; i++)
-					actionGroups [i] = "";
-				lastSelectedCraft = -1;
-				#endif
+				//		#if EXPORT
+				//		for (int i = 0; i < actionGroups.Length; i++)
+				//			actionGroups [i] = "";
+				//		lastSelectedCraft = -1;
+				//		#endif
+
+//				byte[] colorPickerFileData = System.IO.File.ReadAllBytes (FileOperations.ROOT_PATH + "GameData/CraftImport/Textures/colorpicker_texture.jpg");
+
+				byte[] colorPickerFileData = System.IO.File.ReadAllBytes (FileOperations.ROOT_PATH + "GameData/" +CI.TEXTURE_DIR +  "/colorpicker_texture.jpg");
+				colorPicker = new Texture2D (2, 2);
+				colorPicker.LoadImage (colorPickerFileData); //..this will auto-resize the texture dimensions.
+
 			} 
 
 			SetVisible (true);
@@ -886,253 +1882,21 @@ namespace CraftImport
 			switch (downloadState) {
 			#if EXPORT
 			case downloadStateType.UPLOAD:
+				uploadCase ();
 
-				if (craftURL.StartsWith ("file://"))
-					craftURL = craftURL.Substring (7);
-				if (System.IO.File.Exists (craftURL)) {
-
-					// Need to add the following:
-
-					//tags (space separated string), 
-					//style (string, one of [ship aircraft spaceplane lander satellite station base probe rover lifter], if none provided will default to 'ship') *1
-					//description (string, additional text about the craft, KX will also read the description from the craft file)
-					//action_groups (hash of group_name => string-description only the keys [abort gears brakes lights RCS SAS 0, 1..9] will be read)
-					//video_url (string with url to youtube vid, I don't have support for other video sites yet)
-
-					//	update_existing (boolean, default false. If true and that user has a craft with the same name, KX will update the existing craft rather than creating a new one.  In this case providing pictures will be optional). *2
-
-					GUILayout.BeginHorizontal ();
-					GUILayout.Label ("Craft File:");
-					GUILayout.FlexibleSpace ();
-					//GUILayout.EndHorizontal ();
-					//GUILayout.BeginHorizontal ();
-					GUILayout.FlexibleSpace ();
-					GUILayout.Label (craftURL);
-					GUILayout.EndHorizontal ();
-
-					GUILayout.BeginHorizontal ();
-					GUILayout.Label ("Tags:");
-					GUILayout.FlexibleSpace ();
-					tags = GUILayout.TextField (tags, GUILayout.MinWidth (50F), GUILayout.MaxWidth (300F));
-					GUILayout.EndHorizontal ();
-
-			
-					//this draws the transparent catching button that stops items behind the listbox getting events - and does the actual selection of listitems
-					styleItems.DrawBlockingSelector ();
-
-					GUILayout.BeginHorizontal ();
-					GUILayout.Label ("Style:");
-					GUILayout.FlexibleSpace ();
-					#if true
-					//This draws the button and displays/hides the listbox - returns true if someone clicked the button
-					if (styleItems.styleListSelectedItem == null)
-						DrawCall ();
-					styleItems.DrawButton ();
-					#endif
-					GUILayout.FlexibleSpace ();
-					//style = GUILayout.TextField (style, GUILayout.MinWidth (50F), GUILayout.MaxWidth (150F));
-					GUILayout.EndHorizontal ();
-		
-					//These two go at the end so the dropdown is drawn over the other controls, and closes the dropdown if someone clicks elsewhere in the window
-					styleItems.DrawDropDown ();
-					styleItems.CloseOnOutsideClick ();
-			
-					if (!styleItems.ListVisible) {
-						GUILayout.BeginHorizontal ();
-						GUILayout.Label ("Picture url (previously uploaded):");
-						GUILayout.FlexibleSpace ();
-
-						videoUrl = GUILayout.TextField (pictureUrl, GUILayout.Width (300F));
-						GUILayout.EndHorizontal ();
-
-						GUILayout.BeginHorizontal ();
-						GUILayout.Label ("Video url (previously uploaded):");
-						GUILayout.FlexibleSpace ();
-
-						videoUrl = GUILayout.TextField (videoUrl, GUILayout.Width (300F));
-						GUILayout.EndHorizontal ();
-
-						GUILayout.BeginHorizontal ();
-						GUILayout.FlexibleSpace ();
-						if (GUILayout.Button ("Action Groups Descriptions", GUILayout.Width (250.0f))) {
-							downloadState = downloadStateType.ACTIONGROUPS;
-						}
-						GUILayout.FlexibleSpace ();
-						GUILayout.EndHorizontal ();
-
-						GUILayout.BeginHorizontal ();
-						GUILayout.Label ("Force new upload (if existing):");
-						GUILayout.FlexibleSpace ();
-
-						forceNew = GUILayout.Toggle (forceNew, "");
-						GUILayout.FlexibleSpace ();
-						if (!forceNew) {
-							if (lastSelectedCraft >= 0) {
-								GUILayout.Label ("Craft update id: " + ids [lastSelectedCraft]);
-							} else {
-								if (uid != "") {
-									GUILayout.FlexibleSpace ();
-									if (GUILayout.Button ("Select Existing Craft to Replace")) {
-										downloadState = downloadStateType.GETDUPCRAFTLIST;
-										//downloadState = downloadStateType.ACTIONGROUPS;
-									}
-								}
-							}
-						}
-
-
-						GUILayout.EndHorizontal ();
-
-						GUILayout.BeginHorizontal ();
-						GUILayout.Label ("");
-						GUILayout.EndHorizontal ();
-
-						DrawTitle ("KerbalX Info");
-
-						GUILayout.BeginHorizontal ();
-						GUILayout.Label ("Enter userid:");
-
-						#if true
-						GUILayout.FlexibleSpace ();
-						uid = GUILayout.TextField (uid, GUILayout.Width (150F));
-
-
-
-						GUILayout.Label ("", GUILayout.Width (20F));
-						GUILayout.Label ("Save userid:", GUILayout.Width (100F));
-						saveUid = GUILayout.Toggle (saveUid, "");
-
-
-						GUILayout.EndHorizontal ();
-
-
-						GUILayout.BeginHorizontal ();
-						GUILayout.Label ("Enter password:");
-						GUILayout.FlexibleSpace ();
-
-						pswd = GUILayout.PasswordField (pswd, '*', 25, GUILayout.Width (150F));
-						GUILayout.Label ("", GUILayout.Width (20F));
-						GUILayout.Label ("Save password:", GUILayout.Width (100F));
-
-						if (!saveUid)
-							savePswd = false;
-
-						savePswd = GUILayout.Toggle (savePswd, "");
-						GUILayout.EndHorizontal ();
-
-						GUILayout.BeginHorizontal ();
-						GUILayout.Label ("");
-						GUILayout.EndHorizontal ();
-					
-
-						GUILayout.BeginHorizontal ();
-						GUILayout.FlexibleSpace ();
-						if (GUILayout.Button ("Upload to KerbalX", GUILayout.Width (125.0f))) {
-
-							uploadCraft (craftURL);
-						}
-						GUILayout.FlexibleSpace ();
-						#endif
-					}
-				} else {
-					GUILayout.BeginHorizontal ();
-					GUILayout.Label ("Craft File does not exist: ");
-					GUILayout.FlexibleSpace ();
-					//GUILayout.EndHorizontal ();
-					//GUILayout.BeginHorizontal ();
-					GUILayout.FlexibleSpace ();
-					GUILayout.Label (craftURL);
-					GUILayout.EndHorizontal ();
-					GUILayout.BeginHorizontal ();
-				}
-				if (!styleItems.ListVisible) {
-					if (GUILayout.Button ("Cancel", GUILayout.Width (125.0f))) {
-						m_fileBrowser = null;
-						craftURL = "";
-						newCraftName = "";
-						saveInSandbox = false;
-						overwriteExisting = false;
-						downloadState = downloadStateType.INACTIVE;
-						GUIToggle ();
-					}
-					GUILayout.FlexibleSpace ();
-
-					GUILayout.EndHorizontal ();
-				}
 				break;
-			case downloadStateType.GETDUPCRAFTLIST:
+			case downloadStateType.GET_DUP_CRAFT_LIST:
 				getUpdateCraftList ();
 
 				break;
 
-			case downloadStateType.SELECTDUPCRAFT:
-				GUILayout.BeginHorizontal ();
-				GUILayout.Label ("Select Craft to replace");
-				GUILayout.FlexibleSpace ();
-				GUILayout.EndHorizontal ();
+			case downloadStateType.GET_THUMBNAIL:
+				getThumbnailcase ();
+				break;
 
-				GUILayout.BeginHorizontal ();
-				GUILayout.Label ("KerbalX id", GUILayout.Width (90F));
-				GUILayout.FlexibleSpace ();
-				GUILayout.Label ("Craft Name (clickable URL)");
-				GUILayout.FlexibleSpace ();
-				GUILayout.Label ("");
-				GUILayout.EndHorizontal ();
+			case downloadStateType.SELECT_DUP_CRAFT:
+				selectDupCraftCase ();
 
-				GUILayout.BeginHorizontal ();
-
-				buildMenuScrollPosition = GUILayout.BeginScrollView (buildMenuScrollPosition, GUILayout.Width (WIDTH - 30), GUILayout.Height (HEIGHT * 2 / 3));
-				GUILayout.BeginVertical ();
-
-
-				for (int i = 0; i < craftNames.Count; i++) {
-					GUILayout.BeginHorizontal ();
-
-					GUILayout.Label (ids [i] + ":", GUILayout.Width (90F));
-					GUILayout.FlexibleSpace ();
-					if (GUILayout.Button (craftNames [i])) {
-						//Application.OpenURL (uploadServer + craftUrls [i]);
-						Application.OpenURL (uploadServer + "/crafts/" + ids [i]);
-					}
-					#if false
-					// Get the last rect to display the line
-					var lastRect = GUILayoutUtility.GetLastRect();
-					lastRect.y += lastRect.height - 2; // Vertical alignment of the underline
-					lastRect.height = 2; // Thickness of the line
-					GUI.Box(lastRect, "");
-					#endif
-					GUILayout.FlexibleSpace ();
-					if (lastSelectedCraft >= 0 && lastSelectedCraft != i)
-						selectedCraft [i] = false;
-						
-					selectedCraft [i] = GUILayout.Toggle (selectedCraft [i], "");
-					if (selectedCraft [i] && i != lastSelectedCraft)
-						lastSelectedCraft = i;
-
-					GUILayout.EndHorizontal ();
-				}
-				GUILayout.EndVertical ();
-				GUILayout.EndScrollView (); 
-				GUILayout.EndHorizontal ();
-
-				GUILayout.BeginHorizontal ();
-				GUILayout.Label ("");
-				GUILayout.EndHorizontal ();
-				GUILayout.BeginHorizontal ();
-				GUILayout.FlexibleSpace ();
-				if (lastSelectedCraft >= 0) {
-					if (GUILayout.Button ("OK", GUILayout.Width (125.0f))) {
-						downloadState = downloadStateType.UPLOAD;
-					} 
-				} else {
-					if (GUILayout.Button ("Cancel", GUILayout.Width (125.0f))) {
-						downloadState = downloadStateType.UPLOAD;
-					}
-				}
-				
-				GUILayout.FlexibleSpace ();
-
-				GUILayout.EndHorizontal ();
 				break;
 
 			case downloadStateType.ACTIONGROUPS:
@@ -1168,8 +1932,7 @@ namespace CraftImport
 				GUILayout.BeginHorizontal ();
 				GUILayout.FlexibleSpace ();
 				if (GUILayout.Button ("OK", GUILayout.Width (125.0f))) {
-					for (int i = 0; i < actionGroups.Length; i++)
-						actionGroups [i] = "";
+					
 					downloadState = downloadStateType.UPLOAD;
 				}
 				GUILayout.FlexibleSpace ();
@@ -1179,138 +1942,23 @@ namespace CraftImport
 			#endif
 				
 			case downloadStateType.GUI:
-				GUILayout.BeginHorizontal ();
-				GUILayout.Label ("Enter Craft URL:");
-				GUILayout.FlexibleSpace ();
-				//GUILayout.EndHorizontal ();
+				guiCase ();
+				break;
 
-				//GUILayout.BeginHorizontal ();
-				GUILayout.FlexibleSpace ();
-				craftURL = GUILayout.TextField (craftURL, GUILayout.MinWidth (50F), GUILayout.MaxWidth (300F));
-				GUILayout.EndHorizontal ();
-
-				GUILayout.BeginHorizontal ();
-				GUILayout.Label ("Rename craft to:");
-				GUILayout.FlexibleSpace ();
-				//GUILayout.EndHorizontal ();
-				//GUILayout.BeginHorizontal ();
-				GUILayout.FlexibleSpace ();
-				newCraftName = GUILayout.TextField (newCraftName, GUILayout.MinWidth (50F), GUILayout.MaxWidth (300F));
-				GUILayout.EndHorizontal ();
-
-				GUILayout.BeginHorizontal ();
-				GUILayout.Label ("Save in sandbox directory:");
-				GUILayout.FlexibleSpace ();
-				saveInSandbox = GUILayout.Toggle (saveInSandbox, "");
-				GUILayout.EndHorizontal ();
-
-				GUILayout.BeginHorizontal ();
-				GUILayout.Label ("Overwrite existing file if exists:");
-				GUILayout.FlexibleSpace ();
-				overwriteExisting = GUILayout.Toggle (overwriteExisting, "");
-				GUILayout.EndHorizontal ();
-
-				GUILayout.BeginHorizontal ();
-				GUILayout.Label (" ");
-				GUILayout.EndHorizontal ();
-
-
-				GUILayout.BeginHorizontal ();
-				if (GUILayout.Button ("Select Local File", GUILayout.Width (125.0f))) {
-					downloadState = downloadStateType.FILESELECTION;
-					if (m_textPath == null)
-						m_textPath = "";
-					if (m_textPath.Contains (".craft"))
-						m_textPath = System.IO.Path.GetDirectoryName (m_textPath);
-					getFile ("Enter Craft File", ".craft");
-				}
-				GUILayout.EndHorizontal ();
-
-				GUILayout.BeginHorizontal ();
-				GUILayout.EndHorizontal ();
-
-				GUILayout.BeginHorizontal ();
-				if (GUILayout.Button ("Import", GUILayout.Width (125.0f))) {
-					downloadCraft (craftURL);
-				}
-				#if EXPORT
-				GUILayout.FlexibleSpace ();
-				if (GUILayout.Button ("Upload to KerbalX", GUILayout.Width (125.0f))) {
-					if (craftURL == "" || craftURL == null) {
-						downloadState = downloadStateType.FILESELECTION;
-						if (m_textPath == null)
-							m_textPath = "";
-						if (m_textPath.Contains (".craft"))
-							m_textPath = System.IO.Path.GetDirectoryName (m_textPath);
-						getFile ("Enter Craft File", ".craft");
-					}
-
-					downloadState = downloadStateType.UPLOAD;
-					getUidPswd ();
-				}
-
-				#endif
-
-				GUILayout.FlexibleSpace ();
-				if (GUILayout.Button ("Cancel", GUILayout.Width (125.0f))) {
-					m_fileBrowser = null;
-					craftURL = "";
-					newCraftName = "";
-					saveInSandbox = false;
-					overwriteExisting = false;
-					downloadState = downloadStateType.INACTIVE;
-					GUIToggle ();
-				}
-
-				GUILayout.EndHorizontal ();
-
-				GUILayout.BeginHorizontal ();
-				GUILayout.Label (" ");
-				GUILayout.EndHorizontal ();
-
-				GUILayout.BeginHorizontal ();
-				DrawTitle ("Options");
-				GUILayout.EndHorizontal ();
-				#if false
-				GUILayout.BeginHorizontal ();
-				if (GUILayout.Button ("CKAN path", GUILayout.Width (125.0f))) {
-					downloadState = downloadStateType.FILESELECTION;
-
-					m_textPath = newCkanExecPath;
-	
-					// Linux change needed
-					getFile ("Select CKAN Executable", ".exe");
-				}
-
-				GUILayout.FlexibleSpace ();
-				newCkanExecPath = GUILayout.TextField (newCkanExecPath, GUILayout.MinWidth (200F), GUILayout.MaxWidth (300F));
-				GUILayout.EndHorizontal ();
-				#endif
-				GUILayout.BeginHorizontal ();
-				GUILayout.Label ("Use Blizzy Toolbar if available:");
-				GUILayout.FlexibleSpace ();
-				newUseBlizzyToolbar = GUILayout.Toggle (newUseBlizzyToolbar, "");
-				GUILayout.EndHorizontal ();
-				if (Application.platform == RuntimePlatform.WindowsPlayer) {
-					GUILayout.BeginHorizontal ();
-					GUILayout.Label ("Show drive letters in file selection dialog:");
-					GUILayout.FlexibleSpace ();
-					CI.configuration.showDrives = GUILayout.Toggle (CI.configuration.showDrives, "");
-					GUILayout.EndHorizontal ();
-				}
-
+			case downloadStateType.SHOW_WARNING:
+				warningCase ();
 				break;
 
 //			case downloadStateType.FILESELECTION:
 //				getFile ();
 //				break;
 				#if EXPORT
-			case downloadStateType.UPLOADINPROGRESS:
+			case downloadStateType.UPLOAD_IN_PROGRESS:
 				#endif
-			case downloadStateType.INPROGRESS:
+			case downloadStateType.IN_PROGRESS:
 				GUILayout.BeginHorizontal ();
 				GUILayout.FlexibleSpace ();
-				if (downloadState == downloadStateType.INPROGRESS)
+				if (downloadState == downloadStateType.IN_PROGRESS)
 					GUILayout.Label ("Download in progress");
 				else
 					GUILayout.Label ("Upload in progress");
@@ -1321,7 +1969,7 @@ namespace CraftImport
 				GUILayout.EndHorizontal ();
 				GUILayout.BeginHorizontal ();
 				GUILayout.FlexibleSpace ();
-				if (downloadState == downloadStateType.INPROGRESS)
+				if (downloadState == downloadStateType.IN_PROGRESS)
 					GUILayout.Label ("Progress: " + (100 * download.progress).ToString () + "%");
 				#if EXPORT
 				else {
@@ -1340,18 +1988,14 @@ namespace CraftImport
 				GUILayout.BeginHorizontal ();
 				GUILayout.FlexibleSpace ();
 				if (GUILayout.Button ("Cancel", GUILayout.Width (125.0f))) {
-					download.Dispose ();
-					download = null;
-					SetVisible (false);
-					GUI.enabled = false;
-					downloadState = downloadStateType.INACTIVE;
+					resetBeforeExit ();
 				}
 				GUILayout.FlexibleSpace ();
 				GUILayout.EndHorizontal ();
 				break;
 
 				#if EXPORT
-			case downloadStateType.UPLOADCOMPLETED:
+			case downloadStateType.UPLOAD_COMPLETED:
 				#endif
 			case downloadStateType.COMPLETED:
 				GUILayout.BeginHorizontal ();
@@ -1375,16 +2019,13 @@ namespace CraftImport
 				GUILayout.BeginHorizontal ();
 				GUILayout.FlexibleSpace ();
 				if (GUILayout.Button ("OK", GUILayout.Width (125.0f))) {
-					SetVisible (false);
-					GUI.enabled = false;
-					CIInfoDisplay.infoDisplayActive = false;
-					downloadState = downloadStateType.INACTIVE;
+					resetBeforeExit ();
 				}
 				GUILayout.FlexibleSpace ();
 				GUILayout.EndHorizontal ();
 				break;
 
-			case downloadStateType.FILEEXISTS:
+			case downloadStateType.FILE_EXISTS:
 				GUILayout.BeginHorizontal ();
 				GUILayout.FlexibleSpace ();
 				GUILayout.Label ("File Exists Error");
@@ -1397,18 +2038,13 @@ namespace CraftImport
 				GUILayout.EndHorizontal ();
 				GUILayout.BeginHorizontal ();
 				if (GUILayout.Button ("OK", GUILayout.Width (125.0f))) {
-					craftURL = "";
-					newCraftName = "";
-					saveInSandbox = false;
-					overwriteExisting = false;
-					SetVisible (false);
-					GUI.enabled = false;
-					CIInfoDisplay.infoDisplayActive = false;
+					resetBeforeExit ();
 				}
 				GUILayout.EndHorizontal ();
 				break;
+
 				#if EXPORT
-			case downloadStateType.UPLOADERROR:
+			case downloadStateType.UPLOAD_ERROR:
 				#endif
 			case downloadStateType.ERROR:
 				GUILayout.BeginHorizontal ();
@@ -1422,26 +2058,22 @@ namespace CraftImport
 				GUILayout.BeginHorizontal ();
 				GUILayout.FlexibleSpace ();
 				#if EXPORT
-				if (downloadState == downloadStateType.UPLOADERROR)
+				if (downloadState == downloadStateType.UPLOAD_ERROR)
 					GUILayout.Label (uploadErrorMessage);
 				else
 				#endif
-					GUILayout.Label (downloadErrorMessage);
+				GUILayout.Label (downloadErrorMessage);
 				GUILayout.FlexibleSpace ();
 				GUILayout.EndHorizontal ();
 				GUILayout.BeginHorizontal ();
+		#if EXPORT
 				if (GUILayout.Button ("OK", GUILayout.Width (125.0f))) {
-					downloadState = downloadStateType.GUI;
+					downloadState = downloadStateType.UPLOAD;
 				}
+		#endif
 				GUILayout.FlexibleSpace ();
 				if (GUILayout.Button ("Cancel", GUILayout.Width (125.0f))) {
-					craftURL = "";
-					newCraftName = "";
-					saveInSandbox = false;
-					overwriteExisting = false;
-					SetVisible (false);
-					GUI.enabled = false;
-					CIInfoDisplay.infoDisplayActive = false;
+					resetBeforeExit ();
 				}
 				GUILayout.FlexibleSpace ();
 				GUILayout.EndHorizontal ();
@@ -1486,15 +2118,26 @@ namespace CraftImport
 			if (CIInfoDisplay.infoDisplayActive) {
 				SetVisible (true);
 				craftURL = "";
+				m_textPath = "";
 				newCraftName = "";
 				saveInSandbox = false;
 				overwriteExisting = false;
+				#if EXPORT
+				pictureUrl = "";
+				videoUrl = "";
+				forceNew = false;
+			
+				for (int i = 0; i < actionGroups.Length; i++)
+					actionGroups [i] = "";
+				lastSelectedCraft = -1;
+				#endif
 				CI_Button.SetTexture (CI_button_img); 
+				InputLockManager.SetControlLock ((ControlTypes.EDITOR_LOCK | ControlTypes.EDITOR_GIZMO_TOOLS), "CraftImportLock");
 			} else {
 				SetVisible (false);
 				set_CI_Button_active ();
 				cfgWinData = false;
-
+				RemoveInputLock ();
 				GUI_SaveData ();
 
 				CI.configuration.Save ();

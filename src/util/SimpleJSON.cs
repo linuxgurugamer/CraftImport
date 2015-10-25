@@ -576,6 +576,18 @@ namespace SimpleJSON
 				return System.Convert.ToBase64String (stream.ToArray ());
 			}
 		}
+		public string SaveToString ()
+		{
+			string s = "";
+			using (var stream = new System.IO.MemoryStream ()) {
+				SaveToStream (stream);
+				stream.Position = 0;
+				foreach (var c in stream.ToArray()) {
+					s += c;
+				}
+				return s;
+			}
+		}
 
 		public static JSONNode Deserialize (System.IO.BinaryReader aReader)
 		{

@@ -13,3 +13,4 @@
 			a local file.  If not, it prepends "http://"
 			Added "OK" button in case of error, will return to GUI screen with craftURL intact for retrying
 0.5.1		Fixed typo which prevented ALL downloads or copies
+0.6.5		Integration with KerbalX.com.  Upload functionality now added
