@@ -14,3 +14,12 @@
 			Added "OK" button in case of error, will return to GUI screen with craftURL intact for retrying
 0.5.1		Fixed typo which prevented ALL downloads or copies
 0.6.5		Integration with KerbalX.com.  Upload functionality now added
+0.6.8		Upload functionality + ship snapshot
+			Added option to load craft after import
+			Added option to copy text to clipboard
+			Made Import and Upload to KerbalX buttons bigger
+			Changed spacing of elements on upload screen
+			Added check to see if downloaded craft has all necessary mods
+			Added check for login error
+			Added check to see if all parts needed are available
+			Generated image is dynamically updated as values are edited.

@@ -147,18 +147,18 @@ namespace CraftImport
 					configFileNode.SetValue ("vabFov", configuration.vabFov.ToString(), true);
 
 					configuration.vabResolution = int.Parse(SafeLoad(configFileNode.GetValue("vabResolution"), configuration.vabResolution));
-					configuration.vabElevation = int.Parse(SafeLoad(configFileNode.GetValue("vabElevation"), configuration.vabElevation));
-					configuration.vabAzimuth = int.Parse(SafeLoad(configFileNode.GetValue("vabAzimuth"), configuration.vabAzimuth));
-					configuration.vabPitch = int.Parse(SafeLoad(configFileNode.GetValue("vabPitch"), configuration.vabPitch));
-					configuration.vabHeading = int.Parse(SafeLoad(configFileNode.GetValue("vabHeading"), configuration.vabHeading));
-					configuration.vabFov = int.Parse(SafeLoad(configFileNode.GetValue("vabFov"), configuration.vabFov));
+					configuration.vabElevation = float.Parse(SafeLoad(configFileNode.GetValue("vabElevation"), configuration.vabElevation));
+					configuration.vabAzimuth = float.Parse(SafeLoad(configFileNode.GetValue("vabAzimuth"), configuration.vabAzimuth));
+					configuration.vabPitch = float.Parse(SafeLoad(configFileNode.GetValue("vabPitch"), configuration.vabPitch));
+					configuration.vabHeading = float.Parse(SafeLoad(configFileNode.GetValue("vabHeading"), configuration.vabHeading));
+					configuration.vabFov = float.Parse(SafeLoad(configFileNode.GetValue("vabFov"), configuration.vabFov));
 
 					configuration.sphResolution = int.Parse(SafeLoad(configFileNode.GetValue("sphResolution"), configuration.sphResolution));
-					configuration.sphElevation = int.Parse(SafeLoad(configFileNode.GetValue("sphElevation"), configuration.sphElevation));
-					configuration.sphAzimuth = int.Parse(SafeLoad(configFileNode.GetValue("sphAzimuth"), configuration.sphAzimuth));
-					configuration.sphPitch = int.Parse(SafeLoad(configFileNode.GetValue("sphPitch"), configuration.sphPitch));
-					configuration.sphHeading = int.Parse(SafeLoad(configFileNode.GetValue("sphHeading"), configuration.sphHeading));
-					configuration.sphFov = int.Parse(SafeLoad(configFileNode.GetValue("sphFov"), configuration.sphFov));
+					configuration.sphElevation = float.Parse(SafeLoad(configFileNode.GetValue("sphElevation"), configuration.sphElevation));
+					configuration.sphAzimuth = float.Parse(SafeLoad(configFileNode.GetValue("sphAzimuth"), configuration.sphAzimuth));
+					configuration.sphPitch = float.Parse(SafeLoad(configFileNode.GetValue("sphPitch"), configuration.sphPitch));
+					configuration.sphHeading = float.Parse(SafeLoad(configFileNode.GetValue("sphHeading"), configuration.sphHeading));
+					configuration.sphFov = float.Parse(SafeLoad(configFileNode.GetValue("sphFov"), configuration.sphFov));
 
 					configFileNode.SetValue ("backgroundR", configuration.backgroundcolor.r.ToString (), true);
 					configFileNode.SetValue ("backgroundG", configuration.backgroundcolor.g.ToString (), true);

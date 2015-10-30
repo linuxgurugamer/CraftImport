@@ -29,7 +29,7 @@ namespace CraftImport
 
 
 		
-		public static void CaptureThumbnail(ShipConstruct ship, int resolution, 
+	public static void CaptureThumbnail(ShipConstruct ship, int resolution, 
 			float elevation, float azimuth, float pitch, float heading, float fov, string saveFolder, string craftName)
 		{
 			Log.Info ("CaptureThumbnail  elevation: " + elevation.ToString () + "  azimuth: " + azimuth.ToString () + "pitch: " + pitch.ToString () +

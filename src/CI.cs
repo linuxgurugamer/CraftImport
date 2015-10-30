@@ -14,7 +14,7 @@ namespace CraftImport
 	public partial class CI : MonoBehaviour
 	{
 
-		public const String TITLE = "Craft Import";
+		public const String TITLE = "Craft Import/Upload to KerbalX";
 
 		//			public Configuration configuration = Configuration.Instance;
 		//			public static AS Instance { get; private set;}
