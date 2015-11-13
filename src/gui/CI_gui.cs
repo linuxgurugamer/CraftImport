@@ -325,7 +325,7 @@ namespace CraftImport
 
 		private void UpdateToolbarStock ()
 		{
-			//Log.Info ("UpdateToolbarStock, appLaucherHidden: " + appLaucherHidden.ToString ());
+			Log.Info ("UpdateToolbarStock, appLaucherHidden: " + appLaucherHidden.ToString ());
 
 			// Create the button in the KSP AppLauncher
 			if (!CI_Texture_Load) {
@@ -2376,6 +2376,7 @@ namespace CraftImport
 
 		public void GUIToggle ()
 		{
+			Log.Info ("GUIToggle");
 			downloadState = downloadStateType.GUI;
 			CIInfoDisplay.infoDisplayActive = !CIInfoDisplay.infoDisplayActive;
 			if (CIInfoDisplay.infoDisplayActive) {

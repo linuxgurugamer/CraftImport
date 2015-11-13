@@ -16,7 +16,7 @@ Very Important:  Please note, any craft you have loaded in the editor will be lo
 
 On the main Craft Import screen, click the button which says "Upload to KerbalX".  You will be presented with the File Selection dialog:
 
-[file selection screen]
+[https://raw.githubusercontent.com/linuxgurugamer/SpaceTux/gh-pages/images/CraftImport/ci-pg3.png]
 
 If you are in the VAB, the VAB directory of your current save will be displayed.  If you are in the SPH, the SPH directory will be shown.
 
@@ -25,7 +25,7 @@ Select your file, either by double-clicking or clicking one and then clicking th
 
 You will then get to the Craft Import screen:
 
-[craft import screen]
+[https://raw.githubusercontent.com/linuxgurugamer/SpaceTux/gh-pages/images/CraftImport/kerbalx-1.png]
 
 There are two required fields, highlighted in yellow:
 
@@ -65,7 +65,7 @@ Tags		Space separated string of words used on KerbalX as ship tags
 Video URL	URL to a YouTube video
 Action Groups	This button brings up a new window where you can enter descriptions of the action groups which are set:
 
-[Generate a Custom Snapshot screen]
+[https://raw.githubusercontent.com/linuxgurugamer/SpaceTux/gh-pages/images/CraftImport/kerbalx-snapshot.png]
 The top line of this screen shows the name of the craft you are uploading.
 the next set of lines control the camera:
 
@@ -99,7 +99,7 @@ Cancel			Discard the changes
 
 
 
-[Action Groups screen]
+[https://raw.githubusercontent.com/linuxgurugamer/SpaceTux/gh-pages/images/CraftImport/kerbalx-actiongroups.png]
 
 If the craft has a B9 info drive, this will be ignored.  Right now, KerbalX only stores the standard Action Groups. If in the future KerbalX is enhanced to support the Action Groiups Extended (250 action groups), this will be mirrored in Craft Import.  This i
 

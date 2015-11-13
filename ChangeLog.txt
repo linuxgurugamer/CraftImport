@@ -23,3 +23,5 @@
 			Added check for login error
 			Added check to see if all parts needed are available
 			Generated image is dynamically updated as values are edited.
+0.7.0		Release
+0.7.1		Removed code which prevented destruction of data on scene load

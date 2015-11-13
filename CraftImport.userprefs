@@ -1,5 +1,5 @@
 ﻿<Properties StartupItem="CraftImport.csproj">
-  <MonoDevelop.Ide.Workspace ActiveConfiguration="ReleaseExport" />
+  <MonoDevelop.Ide.Workspace ActiveConfiguration="DebugExport" />
   <MonoDevelop.Ide.Workbench ActiveDocument="craftimport.version">
     <Files>
       <File FileName="src\gui\FileBrowser.cs" Line="1" Column="1" />
@@ -12,7 +12,7 @@
       <File FileName="src\util\UIClass.cs" Line="1" Column="1" />
       <File FileName="src\CI_ToolbarButtons.cs" Line="1" Column="1" />
       <File FileName="ChangeLog.txt" Line="1" Column="1" />
-      <File FileName="craftimport.version" Line="9" Column="11" />
+      <File FileName="craftimport.version" Line="23" Column="3" />
       <File FileName="src\Debug_AutoLoadPersistentSaveOnStartup.cs" Line="1" Column="1" />
       <File FileName="README.md" Line="1" Column="1" />
       <File FileName="buildRelease.bat" Line="1" Column="1" />

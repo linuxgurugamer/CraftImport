@@ -12,10 +12,10 @@ namespace CraftImport
 		public UICLASS ()
 		{
 		}
-		public void Start ()
-		{
-			DontDestroyOnLoad (this);
-		}
+		//public void Start ()
+		//{
+		//	DontDestroyOnLoad (this);
+		//}
 
 		public void Awake ()
 		{

@@ -54,7 +54,7 @@ namespace CraftImport
 			Log.SetLevel (configuration.logLevel);
 #endif
 			configuration.BlizzyToolbarIsAvailable = ToolbarManager.ToolbarAvailable;
-
+			Log.Info ("BlizzyToolbarIsAvailable: " + configuration.BlizzyToolbarIsAvailable.ToString ());
 			if (configuration.BlizzyToolbarIsAvailable) {
 				InitToolbarButton ();
 				if (configuration.useBlizzyToolbar) {
