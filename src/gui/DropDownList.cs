@@ -24,7 +24,7 @@ namespace CraftImport
 		private Rect rectButton;
 		private Rect rectListBox;
 
-		internal GUIStyle styleListItem;
+		internal GUIStyle styleListItem = null;
 		internal GUIStyle styleListSelectedItem;
 		internal GUIStyle styleListBox;
 		internal GUIStyle styleListBlocker = new GUIStyle();

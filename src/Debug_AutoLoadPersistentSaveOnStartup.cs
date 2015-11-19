@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace CraftImport
 {
-	#if DEBUG
+	#if false
 	//This will kick us into the save called default and set the first vessel active
 	[KSPAddon(KSPAddon.Startup.MainMenu, false)]
 	public class Debug_AutoLoadPersistentSaveOnStartup : MonoBehaviour

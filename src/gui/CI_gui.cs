@@ -22,6 +22,7 @@ namespace CraftImport
 	public class MainMenuGui : MonoBehaviour
 //	public class MainMenuGui : MonoBehaviourWindowPlus
 	{
+		public CI thisCI = null;
 		//		internal override void DrawWindow(int id)
 		//		{
 		//		}
@@ -34,7 +35,7 @@ namespace CraftImport
 		private /* volatile*/ bool visible = false;
 		bool resetWinPos = false;
 		// Stock APP Toolbar - Stavell
-		public static ApplicationLauncherButton CI_Button = null;
+		public /*static*/ ApplicationLauncherButton CI_Button = null;
 		public  bool stockToolBarcreated = false;
 
 		public static Texture2D CI_button_img = new Texture2D (38, 38, TextureFormat.ARGB32, false);
@@ -130,7 +131,8 @@ namespace CraftImport
 
 		public void OnDestroy ()
 		{
-			
+			Log.Info("OnDestroy in CI_gui, RemoveModApplication & RemoveFromPostDrawQueue");
+			ApplicationLauncher.Instance.RemoveModApplication (this.CI_Button);
 			RenderingManager.RemoveFromPostDrawQueue (0, new Callback (DrawCall));
 		}
 
@@ -139,9 +141,9 @@ namespace CraftImport
 
 		void DrawCall ()
 		{
-			Log.Info ("DrawCall");
+			//Log.Info ("DrawCall");
 			if (!StylesSet) {
-
+				Log.Info ("StylesSet = false");
 				StylesSet = true;
 
 				styleItems.styleListItem = new GUIStyle () { };
@@ -290,16 +292,18 @@ namespace CraftImport
 			blizzyToolbarInstalled = ToolbarManager.ToolbarAvailable;
 		}
 
-		public void setAppLauncherHidden ()
-		{
-			appLaucherHidden = true;
-		}
+//		public void setAppLauncherHidden ()
+//		{
+//			appLaucherHidden = true;
+//		}
 
 		public void OnGUIHideApplicationLauncher ()
 		{
+			Log.Info ("OnGUIHideApplicationLauncher: BlizzyToolbarIsAvailable: " + thisCI.configuration.BlizzyToolbarIsAvailable.ToString () +
+				"   useBlizzyToolbar: " + thisCI.configuration.useBlizzyToolbar.ToString ());
 			if (!appLaucherHidden) {
-
-				if (CI.configuration.BlizzyToolbarIsAvailable && CI.configuration.useBlizzyToolbar) {
+				
+				if (thisCI.configuration.BlizzyToolbarIsAvailable && thisCI.configuration.useBlizzyToolbar) {
 					HideToolbarStock ();
 					appLaucherHidden = true;
 				}
@@ -309,7 +313,9 @@ namespace CraftImport
 
 		public void OnGUIShowApplicationLauncher ()
 		{
-			if (!CI.configuration.BlizzyToolbarIsAvailable || !CI.configuration.useBlizzyToolbar) {
+			Log.Info ("OnGUIShowApplicationLauncher: BlizzyToolbarIsAvailable: " + thisCI.configuration.BlizzyToolbarIsAvailable.ToString () +
+			"   useBlizzyToolbar: " + thisCI.configuration.useBlizzyToolbar.ToString ());
+			if (!thisCI.configuration.BlizzyToolbarIsAvailable || !thisCI.configuration.useBlizzyToolbar) {
 				if (appLaucherHidden) {
 					appLaucherHidden = false;
 					if (CI_Button != null)
@@ -323,7 +329,7 @@ namespace CraftImport
 			UpdateToolbarStock ();
 		}
 
-		private void UpdateToolbarStock ()
+		public void UpdateToolbarStock ()
 		{
 			Log.Info ("UpdateToolbarStock, appLaucherHidden: " + appLaucherHidden.ToString ());
 
@@ -337,8 +343,8 @@ namespace CraftImport
 
 				CI_Texture_Load = true;
 			}
-			if (CI_Button == null && !appLaucherHidden) {
-				
+			if (CI_Button == null /*&& !appLaucherHidden */) {
+				Log.Info ("UpdateToolbarStock, CI_Button is null");
 				CI_Button = ApplicationLauncher.Instance.AddModApplication (GUIToggle, GUIToggle,
 					null, null,
 					null, null,
@@ -350,7 +356,8 @@ namespace CraftImport
 
 		private void HideToolbarStock ()
 		{
-			ApplicationLauncher.Instance.RemoveModApplication (MainMenuGui.CI_Button);
+			Log.Info ("HideToolbarStock");
+			ApplicationLauncher.Instance.RemoveModApplication (CI_Button);
 			Destroy (CI_Button); // Is this necessary?
 			CI_Button = null;
 			appLaucherHidden = false;
@@ -375,16 +382,20 @@ namespace CraftImport
 				System.IO.FileInfo file = new System.IO.FileInfo (convertedJpg);
 				file.Delete ();
 			}
+		#if EXPORT
 			_image = null;
+		thumbnailInited = false;
+		changed = true;
+		checkedForThumbnail = false;
+
+		#endif
 			download = null;
 			SetVisible (false);
 			GUI.enabled = false;
-			thumbnailInited = false;
 			downloadState = downloadStateType.INACTIVE;
 			RemoveInputLock ();
 
 			cfgWinData = false;
-			changed = true;
 			m_fileBrowser = null;
 			m_textPath = "";
 			craftURL = "";
@@ -396,9 +407,8 @@ namespace CraftImport
 			overwriteExisting = false;
 			loadAfterImport = true;
 			subassembly = false;
-			checkedForThumbnail = false;
 			CIInfoDisplay.infoDisplayActive = false;
-			if (CI.configuration.BlizzyToolbarIsAvailable && CI.configuration.useBlizzyToolbar) {
+			if (thisCI.configuration.BlizzyToolbarIsAvailable && thisCI.configuration.useBlizzyToolbar) {
 				HideToolbarStock ();
 			} else {
 				UpdateToolbarStock ();
@@ -735,24 +745,24 @@ namespace CraftImport
 		void saveUidPswd ()
 		{
 			if (saveUid)
-				CI.configuration.uid = uid;
+				thisCI.configuration.uid = uid;
 			else
-				CI.configuration.uid = "";
+				thisCI.configuration.uid = "";
 			if (savePswd)
-				CI.configuration.pswd = pswd;
+				thisCI.configuration.pswd = pswd;
 			else
-				CI.configuration.pswd = "";
-			CI.configuration.Save ();
+				thisCI.configuration.pswd = "";
+			thisCI.configuration.Save ();
 		}
 
 		void getUidPswd ()
 		{
-			uid = CI.configuration.uid;
+			uid = thisCI.configuration.uid;
 			if (uid != "" && uid != null)
 				saveUid = true;
 			else
 				saveUid = false;
-			pswd = CI.configuration.pswd;
+			pswd = thisCI.configuration.pswd;
 			if (pswd != "" && pswd != null)
 				savePswd = true;
 			else
@@ -899,7 +909,7 @@ namespace CraftImport
 								Log.Info ("pngToconvert: " + pngToConvert);
 								Log.Info ("convertedJpg: " + convertedJpg);
 
-								ConvertToJPG (pngToConvert, convertedJpg, CI.configuration.backgroundcolor);
+								ConvertToJPG (pngToConvert, convertedJpg, thisCI.configuration.backgroundcolor);
 								// Delete the file if we took a snapshot of the craft using the thumbnail function
 								if (thumbnail) {
 									Log.Info ("deleting: " + pngToConvert);
@@ -1164,7 +1174,7 @@ namespace CraftImport
 			m_fileBrowser.SelectionPattern = "*" + suffix;
 			m_fileBrowser.DirectoryImage = m_directoryImage;
 			m_fileBrowser.FileImage = m_fileImage;
-			m_fileBrowser.showDrives = CI.configuration.showDrives;
+			m_fileBrowser.showDrives = thisCI.configuration.showDrives;
 			m_fileBrowser.ShowNonmatchingFiles = false;
 
 
@@ -1222,7 +1232,7 @@ namespace CraftImport
 					#endif
 					downloadState = downloadStateType.GUI;
 					craftURL = "file://" + m_textPath;
-					CI.configuration.lastImportDir = System.IO.Path.GetDirectoryName (m_textPath);
+					thisCI.configuration.lastImportDir = System.IO.Path.GetDirectoryName (m_textPath);
 					return;
 				}
 			}
@@ -1245,6 +1255,7 @@ namespace CraftImport
 
 		internal void RemoveInputLock ()
 		{
+			Log.Info ("RemoveInputLock");
 			if (InputLockManager.GetControlLock ("CraftImportLock") != ControlTypes.None) {
 				//LogFormatted_DebugOnly("Removing-{0}", "TWPControlLock");
 				InputLockManager.RemoveControlLock ("CraftImportLock");
@@ -1302,11 +1313,12 @@ namespace CraftImport
 						resetWinPos = false;
 					}
 					bounds = GUILayout.Window (GetInstanceID (), bounds, Window, CI.TITLE, HighLogic.Skin.window);
+				#if EXPORT
 					if (_image != null) {
 						imgbounds = new Rect (imgbounds.xMin, imgbounds.yMin, displayres, displayres + 30);
 						imgbounds = GUILayout.Window (GetInstanceID () + 1, imgbounds, imgWindow, CI.TITLE + " Upload Image Preview", HighLogic.Skin.window);
 					}
-					
+					#endif
 				}
 			} catch (Exception e) {
 				Log.Error ("exception: " + e.Message);
@@ -1356,8 +1368,9 @@ namespace CraftImport
 				
 #if true
 				//This draws the button and displays/hides the listbox - returns true if someone clicked the button
-				if (styleItems.styleListSelectedItem == null)
-					DrawCall ();
+			//	if (styleItems.styleListSelectedItem == null)
+			//		DrawCall ();
+
 				styleItems.DrawButton ();
 				#endif
 				GUILayout.FlexibleSpace ();
@@ -1500,7 +1513,7 @@ namespace CraftImport
 					GUILayout.BeginHorizontal ();
 					GUILayout.FlexibleSpace ();
 					if (GUILayout.Button ("Upload to KerbalX", GUILayout.Width (125.0f), GUILayout.Height (40))) {
-						if (CI.configuration.showWarning &&
+						if (thisCI.configuration.showWarning &&
 						    (pictureUrl == "" || pictureUrl.StartsWith ("file://"))) {
 							downloadState = downloadStateType.SHOW_WARNING;
 						} else {
@@ -1571,7 +1584,7 @@ namespace CraftImport
 				lastRect.y += lastRect.height - 2; // Vertical alignment of the underline
 				lastRect.height = 2; // Thickness of the line
 				GUI.Box(lastRect, "");
-				#endif
+#endif
 				GUILayout.FlexibleSpace ();
 				if (lastSelectedCraft >= 0 && lastSelectedCraft != i)
 					selectedCraft [i] = false;
@@ -1653,7 +1666,7 @@ namespace CraftImport
 			GUILayout.BeginHorizontal ();
 			GUILayout.Label ("Show this warning in the future:");
 			GUILayout.FlexibleSpace ();
-			CI.configuration.showWarning = GUILayout.Toggle (CI.configuration.showWarning, "");
+			thisCI.configuration.showWarning = GUILayout.Toggle (thisCI.configuration.showWarning, "");
 			GUILayout.FlexibleSpace ();
 			GUILayout.EndHorizontal ();
 
@@ -1709,20 +1722,20 @@ namespace CraftImport
 
 					if (ship.shipFacility != EditorFacility.VAB) {
 						facility = "SPH";
-						newresolution = CI.configuration.sphResolution;
-						newelevation = CI.configuration.sphElevation;
-						newazimuth = CI.configuration.sphAzimuth;
-						newpitch = CI.configuration.sphPitch;
-						newheading = CI.configuration.sphHeading;
-						newfov = CI.configuration.sphFov;
+						newresolution = thisCI.configuration.sphResolution;
+						newelevation = thisCI.configuration.sphElevation;
+						newazimuth = thisCI.configuration.sphAzimuth;
+						newpitch = thisCI.configuration.sphPitch;
+						newheading = thisCI.configuration.sphHeading;
+						newfov = thisCI.configuration.sphFov;
 					} else {
 						facility = "VAB";
-						newresolution = CI.configuration.vabResolution;
-						newelevation = CI.configuration.vabElevation;
-						newazimuth = CI.configuration.vabAzimuth;
-						newpitch = CI.configuration.vabPitch;
-						newheading = CI.configuration.vabHeading;
-						newfov = CI.configuration.vabFov;
+						newresolution = thisCI.configuration.vabResolution;
+						newelevation = thisCI.configuration.vabElevation;
+						newazimuth = thisCI.configuration.vabAzimuth;
+						newpitch = thisCI.configuration.vabPitch;
+						newheading = thisCI.configuration.vabHeading;
+						newfov = thisCI.configuration.vabFov;
 					}
 				}
 
@@ -1801,7 +1814,7 @@ namespace CraftImport
 
 				GUILayout.BeginHorizontal ();
 				styleLabel = new GUIStyle (GUI.skin.label);
-				styleLabel.normal.textColor = CI.configuration.backgroundcolor;
+				styleLabel.normal.textColor = thisCI.configuration.backgroundcolor;
 				GUILayout.Label ("Click on desired background color:", styleLabel);
 				GUILayout.FlexibleSpace ();
 				GUILayout.BeginArea (new Rect (250, 250, colorPickerImageWidth, colorPickerImageHeight));
@@ -1817,7 +1830,7 @@ namespace CraftImport
 					// colors, etc, etc.
 					//
 					Log.Info ("Mouse position: " + pickpos.x.ToString () + "," + pickpos.y.ToString () + "   col: " + col.ToString ());
-					CI.configuration.backgroundcolor = col;
+					thisCI.configuration.backgroundcolor = col;
 					changed = true;
 				}
 				GUILayout.EndArea ();
@@ -1844,7 +1857,7 @@ namespace CraftImport
 					convertedJpg = pictureUrl.Substring (7, pictureUrl.Length - 10) + "jpg";
 					Log.Info ("pngToconvert: " + pngToConvert);
 					Log.Info ("convertedJpg: " + convertedJpg);
-					ConvertToJPG (pngToConvert, convertedJpg, CI.configuration.backgroundcolor);
+					ConvertToJPG (pngToConvert, convertedJpg, thisCI.configuration.backgroundcolor);
 					System.IO.FileInfo file = new System.IO.FileInfo (pngToConvert);
 					file.Delete ();
 
@@ -1864,9 +1877,9 @@ namespace CraftImport
 				if (GUILayout.Button ("Reset to " + facility + " Defaults", GUILayout.Width (150.0f))) {
 					thumbnailInited = false;
 					if (ship.shipFacility != EditorFacility.VAB) {
-						CI.configuration.setDefaultSPHResolution ();
+						thisCI.configuration.setDefaultSPHResolution ();
 					} else {
-						CI.configuration.setDefaultVABResolution ();
+						thisCI.configuration.setDefaultVABResolution ();
 					}
 
 				}
@@ -2066,7 +2079,7 @@ namespace CraftImport
 				GUILayout.BeginHorizontal ();
 				GUILayout.Label ("Show drive letters in file selection dialog:", GUILayout.Width(300F));
 				//GUILayout.FlexibleSpace ();
-				CI.configuration.showDrives = GUILayout.Toggle (CI.configuration.showDrives, "");
+				thisCI.configuration.showDrives = GUILayout.Toggle (thisCI.configuration.showDrives, "");
 				GUILayout.EndHorizontal ();
 			}
 		}
@@ -2080,14 +2093,14 @@ namespace CraftImport
 		{
 			if (cfgWinData == false) {
 				cfgWinData = true;
-				newUseBlizzyToolbar = CI.configuration.useBlizzyToolbar;
+				newUseBlizzyToolbar = thisCI.configuration.useBlizzyToolbar;
 				//newShowDrives = CI.configuration.showDrives;
 				//newCkanExecPath = CI.configuration.ckanExecPath;
 				craftURL = "";
 				m_textPath = "";
 				saveInSandbox = false;
 				overwriteExisting = false;
-				m_textPath = CI.configuration.lastImportDir;
+				m_textPath = thisCI.configuration.lastImportDir;
 				//		#if EXPORT
 				//		for (int i = 0; i < actionGroups.Length; i++)
 				//			actionGroups [i] = "";
@@ -2179,7 +2192,7 @@ namespace CraftImport
 			case downloadStateType.GUI:
 				guiCase ();
 				break;
-
+#if EXPORT
 			case downloadStateType.SHOW_WARNING:
 				warningCase ();
 				break;
@@ -2187,9 +2200,9 @@ namespace CraftImport
 //			case downloadStateType.FILESELECTION:
 //				getFile ();
 //				break;
-				#if EXPORT
+
 			case downloadStateType.UPLOAD_IN_PROGRESS:
-				#endif
+#endif
 			case downloadStateType.IN_PROGRESS:
 				GUILayout.BeginHorizontal ();
 				GUILayout.FlexibleSpace ();
@@ -2359,7 +2372,7 @@ namespace CraftImport
 
 		public void GUI_SaveData ()
 		{
-			CI.configuration.useBlizzyToolbar = newUseBlizzyToolbar;
+			thisCI.configuration.useBlizzyToolbar = newUseBlizzyToolbar;
 			//CI.configuration.ckanExecPath = newCkanExecPath;
 			//CI.configuration.showDrives = newShowDrives;
 			//CI.configuration.lastImportDir = m_textPath;
@@ -2368,44 +2381,61 @@ namespace CraftImport
 		public void set_CI_Button_active ()
 		{
 			
-			if (!CI.configuration.useBlizzyToolbar) {
+			if (!thisCI.configuration.useBlizzyToolbar) {
 				CI_Button.SetTexture (CI_button_img);
 
 			}
 		}
 
+		public void initGUIToggle()
+		{
+			Log.Info ("initGUIToggle");
+			SetVisible (true);
+			downloadState = downloadStateType.GUI;
+			craftURL = "";
+			m_textPath = "";
+			newCraftName = "";
+			saveInSandbox = false;
+			overwriteExisting = false;
+
+#if EXPORT
+			pictureUrl = "";
+			videoUrl = "";
+			forceNew = false;
+			for (int i = 0; i < actionGroups.Length; i++)
+				actionGroups [i] = "";
+			lastSelectedCraft = -1;
+			Log.Info ("initGUIToggle e");
+#endif
+
+			Log.Info ("Setting screen lock");
+			InputLockManager.SetControlLock ((ControlTypes.EDITOR_LOCK | ControlTypes.EDITOR_GIZMO_TOOLS), "CraftImportLock");
+		}
+
+		public void endGUIToggle()
+		{
+			Log.Info ("endGUIToggle");
+			SetVisible (false);
+			set_CI_Button_active ();
+			cfgWinData = false;
+			RemoveInputLock ();
+			GUI_SaveData ();
+
+			thisCI.configuration.Save ();
+
+		}
 		public void GUIToggle ()
 		{
 			Log.Info ("GUIToggle");
 			downloadState = downloadStateType.GUI;
 			CIInfoDisplay.infoDisplayActive = !CIInfoDisplay.infoDisplayActive;
 			if (CIInfoDisplay.infoDisplayActive) {
-				SetVisible (true);
-				craftURL = "";
-				m_textPath = "";
-				newCraftName = "";
-				saveInSandbox = false;
-				overwriteExisting = false;
-				#if EXPORT
-				pictureUrl = "";
-				videoUrl = "";
-				forceNew = false;
-			
-				for (int i = 0; i < actionGroups.Length; i++)
-					actionGroups [i] = "";
-				lastSelectedCraft = -1;
-				#endif
+				initGUIToggle ();
 				CI_Button.SetTexture (CI_button_img); 
-				InputLockManager.SetControlLock ((ControlTypes.EDITOR_LOCK | ControlTypes.EDITOR_GIZMO_TOOLS), "CraftImportLock");
-			} else {
-				SetVisible (false);
-				set_CI_Button_active ();
-				cfgWinData = false;
-				RemoveInputLock ();
-				GUI_SaveData ();
 
-				CI.configuration.Save ();
-				if (CI.configuration.BlizzyToolbarIsAvailable && CI.configuration.useBlizzyToolbar) {
+			} else {
+				endGUIToggle ();
+				if (thisCI.configuration.BlizzyToolbarIsAvailable && thisCI.configuration.useBlizzyToolbar) {
 					HideToolbarStock ();
 				} else {
 					UpdateToolbarStock ();

@@ -23,3 +23,9 @@ Cancel
 The file selection shows the folders and files in the current directory. Only craft files and folders are selectable.
 
 
+++++++++++++++++++++++++++
+
+IMPORTANT!!!!!
+
+Be sure to totally delete the old directory BEFORE installing this.
+

@@ -94,7 +94,6 @@
     <Compile Include="src\util\Log.cs" />
     <Compile Include="src\util\FileOperations.cs" />
     <Compile Include="src\SharedStuff\ToolbarWrapper.cs" />
-    <Compile Include="src\util\UIClass.cs" />
     <Compile Include="src\CI.cs" />
     <Compile Include="src\CI_ToolbarButtons.cs" />
     <Compile Include="src\gui\CIInfoDisplay.cs" />

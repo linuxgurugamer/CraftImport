@@ -7,7 +7,7 @@ using UnityEngine;
 
 namespace CraftImport
 {
-    public partial class CI
+	public partial class CI : MonoBehaviour
     {
 		static IButton btnReturn = null;
 		private const string _tooltipOn = "Hide Craft Import";
@@ -23,17 +23,20 @@ namespace CraftImport
 
 		public void ToolbarToggle()
 		{
+			Log.Info ("ToolbarToggle, visible: " + gui.Visible().ToString());
 			if (gui.Visible ()) {
+				gui.endGUIToggle ();
 				gui.SetVisible (false);
 				GUI.enabled = false;
 				btnReturn.ToolTip = _tooltipOff;
 				gui.GUI_SaveData ();
 
-				if (CI.configuration.BlizzyToolbarIsAvailable && CI.configuration.useBlizzyToolbar) {
+				if (gui.thisCI.configuration.BlizzyToolbarIsAvailable && gui.thisCI.configuration.useBlizzyToolbar) {
 					btnReturn.TexturePath = TEXTURE_DIR + "CI-24";
 					gui.OnGUIHideApplicationLauncher ();
 					//InitToolbarButton ();
 				} else {
+
 					//gui.OnGUIShowApplicationLauncher ();
 					CIInfoDisplay.infoDisplayActive = false;
 					//GameEvents.onGUIApplicationLauncherReady.Add (gui.OnGUIApplicationLauncherReady);
@@ -50,13 +53,14 @@ namespace CraftImport
 				configuration.Save ();
 				ToolBarActive ();
 			} else {
-				gui.SetVisible (true);
+				gui.initGUIToggle ();
+				//gui.SetVisible (true);
 				GUI.enabled = true;
 				btnReturn.ToolTip = _tooltipOn;
 
 				btnReturn.TexturePath = TEXTURE_DIR + "CI-24";
 
-				InputLockManager.SetControlLock((ControlTypes.EDITOR_LOCK | ControlTypes.EDITOR_GIZMO_TOOLS), "CraftImportLock");
+				//InputLockManager.SetControlLock((ControlTypes.EDITOR_LOCK | ControlTypes.EDITOR_GIZMO_TOOLS), "CraftImportLock");
 			}
 		}
 

@@ -25,3 +25,6 @@
 			Generated image is dynamically updated as values are edited.
 0.7.0		Release
 0.7.1		Removed code which prevented destruction of data on scene load
+0.8.0		1.0.5 compatibility
+0.8.1		Fixed issue with lagging during flight
+			Fixed locking of screen when exiting editor while settings window was open

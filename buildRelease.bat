@@ -1,4 +1,4 @@
-rem @echo off
+@echo off
 set DEFHOMEDRIVE=d:
 set DEFHOMEDIR=%DEFHOMEDRIVE%%HOMEPATH%
 set HOMEDIR=

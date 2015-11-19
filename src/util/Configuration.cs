@@ -85,7 +85,7 @@ namespace CraftImport
 		public void Save ()
 		{
 			FileOperations.SaveConfiguration (this, FILE_NAME);
-			CI.changeCallbacks = true;
+			//CI.changeCallbacks = true;
 		}
 
 		public void Load ()
