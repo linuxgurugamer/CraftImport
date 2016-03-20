@@ -28,3 +28,7 @@
 0.8.0		1.0.5 compatibility
 0.8.1		Fixed issue with lagging during flight
 			Fixed locking of screen when exiting editor while settings window was open
+
+0.8.2		Fixed a couple of null ref exceptions
+			Blocked KerbalX from downloads due to security problem on site
+			Added message about kerbalx being blocked

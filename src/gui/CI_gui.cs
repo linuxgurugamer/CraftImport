@@ -72,6 +72,8 @@ namespace CraftImport
 			#if false
 			return "http://kerbalx-stage.herokuapp.com";
 			#else
+			// The following is so that the kebalx-stage server can be accessed without changing any code
+			// simply by adding a file 
 			if (!System.IO.File.Exists (FileOperations.ROOT_PATH + "GameData/" + CI.MOD_DIR + "devmode.txt")) {
 				return "https://kerbalx.com";
 			} else {
@@ -234,6 +236,7 @@ namespace CraftImport
 					return false;
 			}
 			HttpWebResponse response = null;
+			Log.Info ("UrlExists Downloading: " + file);
 			var request = (HttpWebRequest)WebRequest.Create (file);
 			request.Method = "HEAD";
 			request.Timeout = 5000; // milliseconds
@@ -299,8 +302,8 @@ namespace CraftImport
 
 		public void OnGUIHideApplicationLauncher ()
 		{
-			Log.Info ("OnGUIHideApplicationLauncher: BlizzyToolbarIsAvailable: " + thisCI.configuration.BlizzyToolbarIsAvailable.ToString () +
-				"   useBlizzyToolbar: " + thisCI.configuration.useBlizzyToolbar.ToString ());
+//			Log.Info ("OnGUIHideApplicationLauncher: BlizzyToolbarIsAvailable: " + thisCI.configuration.BlizzyToolbarIsAvailable.ToString () +
+//				"   useBlizzyToolbar: " + thisCI.configuration.useBlizzyToolbar.ToString ());
 			if (!appLaucherHidden) {
 				
 				if (thisCI.configuration.BlizzyToolbarIsAvailable && thisCI.configuration.useBlizzyToolbar) {
@@ -313,8 +316,8 @@ namespace CraftImport
 
 		public void OnGUIShowApplicationLauncher ()
 		{
-			Log.Info ("OnGUIShowApplicationLauncher: BlizzyToolbarIsAvailable: " + thisCI.configuration.BlizzyToolbarIsAvailable.ToString () +
-			"   useBlizzyToolbar: " + thisCI.configuration.useBlizzyToolbar.ToString ());
+//			Log.Info ("OnGUIShowApplicationLauncher: BlizzyToolbarIsAvailable: " + thisCI.configuration.BlizzyToolbarIsAvailable.ToString () +
+//			"   useBlizzyToolbar: " + thisCI.configuration.useBlizzyToolbar.ToString ());
 			if (!thisCI.configuration.BlizzyToolbarIsAvailable || !thisCI.configuration.useBlizzyToolbar) {
 				if (appLaucherHidden) {
 					appLaucherHidden = false;
@@ -510,6 +513,7 @@ namespace CraftImport
 		bool missingParts = false;
 		bool checkMissingParts (string craft)
 		{
+			Log.Info ("checkMissingParts");
 			SortedList<string, string> missingPartsList = new SortedList<string, string> ();
 
 			Log.Info ("checkMissingParts");
@@ -560,12 +564,22 @@ namespace CraftImport
 					yield break;
 				}
 				kerbalx = (craftURL.IndexOf ("kerbalx.com", StringComparison.OrdinalIgnoreCase) >= 0);
+				if (kerbalx)
+				{
+					downloadState = downloadStateType.COMPLETED;
+					instructions = "Access to KerbalX is currently disabled due to a site problem.\n\n";
+					instructions += "You can download the craft file using a browser, and then import using this mod.\n\n";
+					instructions += "The mod will be updated again once the security issues with the site have been fixed";
+					yield break;
+						
+				}
 				// Create a download object
 				Log.Info ("s: " + s);
 				Log.Info ("kerbalx: " + kerbalx.ToString ());
 				craftDownload = new WWW (s);
 				// Wait until the download is done
 				yield   return craftDownload;
+				Log.Info ("Download completed   craftDownload.error: " +craftDownload.error);
 				if (!String.IsNullOrEmpty (craftDownload.error)) {
 					Log.Error ("Error downloading: " + craftDownload.error);
 					downloadErrorMessage = craftDownload.error;
@@ -590,6 +604,7 @@ namespace CraftImport
 					}
 					bool b = saveCraftFile (craftDownload.text, subassembly);
 		
+					Log.Info ("After saveCraftFile, b: " + b.ToString());
 					saveInSandbox = false;
 					overwriteExisting = false;
 
@@ -704,8 +719,10 @@ namespace CraftImport
 					}
 					craftURL = "";
 				}
-				download.Dispose ();
-				download = null;
+				if (download != null) {
+					download.Dispose ();
+					download = null;
+				}
 			}
 		}
 
@@ -1246,7 +1263,7 @@ namespace CraftImport
 					return;
 				}
 			}
-			Log.Info ("downloadState: " + downloadState.ToString ());
+			//Log.Info ("downloadState: " + downloadState.ToString ());
 
 			downloadState = downloadStateType.GUI;
 		}
@@ -2125,9 +2142,9 @@ namespace CraftImport
 
 			//	DrawTitle ("Craft Import");
 
-
+			//Log.Info ("downloadState: " + downloadState.ToString ());
 			switch (downloadState) {
-			#if EXPORT
+#if EXPORT
 			case downloadStateType.UPLOAD:
 				uploadCase ();
 
@@ -2187,7 +2204,7 @@ namespace CraftImport
 
 				GUILayout.EndHorizontal ();
 				break;
-			#endif
+#endif
 				
 			case downloadStateType.GUI:
 				guiCase ();
@@ -2204,6 +2221,7 @@ namespace CraftImport
 			case downloadStateType.UPLOAD_IN_PROGRESS:
 #endif
 			case downloadStateType.IN_PROGRESS:
+				Log.Info ("IN_PROGRESS");
 				GUILayout.BeginHorizontal ();
 				GUILayout.FlexibleSpace ();
 				if (downloadState == downloadStateType.IN_PROGRESS)
@@ -2212,13 +2230,17 @@ namespace CraftImport
 					GUILayout.Label ("Upload in progress");
 				GUILayout.FlexibleSpace ();
 				GUILayout.EndHorizontal ();
+
 				GUILayout.BeginHorizontal ();
 				GUILayout.Label ("");
 				GUILayout.EndHorizontal ();
+
 				GUILayout.BeginHorizontal ();
 				GUILayout.FlexibleSpace ();
-				if (downloadState == downloadStateType.IN_PROGRESS)
-					GUILayout.Label ("Progress: " + (100 * download.progress).ToString () + "%");
+				if (downloadState == downloadStateType.IN_PROGRESS) {
+					if (download != null)
+						GUILayout.Label ("Progress: " + (100 * download.progress).ToString () + "%");
+				}
 				#if EXPORT
 				else {
 					if (Time.realtimeSinceStartup - lastUpdate > 1) {
@@ -2230,9 +2252,11 @@ namespace CraftImport
 				#endif
 				GUILayout.FlexibleSpace ();
 				GUILayout.EndHorizontal ();
+
 				GUILayout.BeginHorizontal ();
 				GUILayout.Label ("");
 				GUILayout.EndHorizontal ();
+
 				GUILayout.BeginHorizontal ();
 				GUILayout.FlexibleSpace ();
 				if (GUILayout.Button ("Cancel", GUILayout.Width (125.0f))) {

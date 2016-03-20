@@ -2,19 +2,19 @@
   <MonoDevelop.Ide.Workspace ActiveConfiguration="ReleaseExport" />
   <MonoDevelop.Ide.Workbench ActiveDocument="ChangeLog.txt">
     <Files>
-      <File FileName="src\gui\CI_gui.cs" Line="2423" Column="4" />
+      <File FileName="src\gui\CI_gui.cs" Line="1484" Column="6" />
       <File FileName="src\gui\DropDownList.cs" Line="1" Column="1" />
-      <File FileName="src\CI.cs" Line="103" Column="4" />
+      <File FileName="src\CI.cs" Line="1" Column="1" />
       <File FileName="src\util\Configuration.cs" Line="1" Column="1" />
-      <File FileName="..\Extraplanetary-Launchpads\Source\GUI\BuildWindow.cs" Line="1" Column="1" />
       <File FileName="src\util\FileOperations.cs" Line="1" Column="1" />
-      <File FileName="src\CI_ToolbarButtons.cs" Line="56" Column="14" />
-      <File FileName="ChangeLog.txt" Line="3" Column="95" />
-      <File FileName="craftimport.version" Line="1" Column="1" />
+      <File FileName="src\CI_ToolbarButtons.cs" Line="1" Column="1" />
+      <File FileName="ChangeLog.txt" Line="32" Column="8" />
       <File FileName="src\Debug_AutoLoadPersistentSaveOnStartup.cs" Line="1" Column="1" />
-      <File FileName="README.md" Line="23" Column="118" />
-      <File FileName="buildRelease.bat" Line="42" Column="10" />
+      <File FileName="README.md" Line="1" Column="1" />
+      <File FileName="buildRelease.bat" Line="1" Column="1" />
       <File FileName="src\util\Log.cs" Line="1" Column="1" />
+      <File FileName="src\SharedStuff\ToolbarWrapper.cs" Line="1" Column="1" />
+      <File FileName="src\util\SimpleJSON.cs" Line="1" Column="1" />
     </Files>
   </MonoDevelop.Ide.Workbench>
   <MonoDevelop.Ide.DebuggingService.Breakpoints>
