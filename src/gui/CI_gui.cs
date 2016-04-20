@@ -6,7 +6,7 @@ using System.Text;
 using System.Net;
 using System.Linq;
 using SimpleJSON;
-
+using KSP.UI.Screens;
 
 //using KSPPluginFramework;
 
@@ -122,7 +122,7 @@ namespace CraftImport
 		{
 			if (!firstAwake) {
 				
-				RenderingManager.AddToPostDrawQueue (0, new Callback (DrawCall));
+				//RenderingManager.AddToPostDrawQueue (0, new Callback (DrawCall));
 				firstAwake = true;
 			}
 
@@ -131,11 +131,12 @@ namespace CraftImport
 		
 		}
 
+
 		public void OnDestroy ()
 		{
 			Log.Info("OnDestroy in CI_gui, RemoveModApplication & RemoveFromPostDrawQueue");
 			ApplicationLauncher.Instance.RemoveModApplication (this.CI_Button);
-			RenderingManager.RemoveFromPostDrawQueue (0, new Callback (DrawCall));
+			//RenderingManager.RemoveFromPostDrawQueue (0, new Callback (DrawCall));
 		}
 
 		//Rect windowRect = new Rect(300, 0, 200, 200);
@@ -1284,6 +1285,12 @@ namespace CraftImport
 		/////////////////////////////////////
 		public void OnGUI ()
 		{
+			GUI.skin = HighLogic.Skin;
+
+			if (Event.current.type == EventType.Repaint || Event.current.isMouse)
+			{
+				DrawCall(); // Your current on preDrawQueue code
+			}
 			#if EXPORT
 			Awake ();
 			#endif
@@ -1370,7 +1377,7 @@ namespace CraftImport
 				GUILayout.EndHorizontal ();
 
 				GUILayout.BeginHorizontal ();
-				GUILayout.Label ("Tags:");
+				GUILayout.Label ("Tags:", GUILayout.Width(50F));
 				GUILayout.FlexibleSpace ();
 				tags = GUILayout.TextField (tags, GUILayout.MinWidth (50F), GUILayout.MaxWidth (300F));
 				GUILayout.EndHorizontal ();
@@ -1380,7 +1387,7 @@ namespace CraftImport
 				styleItems.DrawBlockingSelector ();
 
 				GUILayout.BeginHorizontal ();
-				GUILayout.Label ("Style:");
+				GUILayout.Label ("Style:", GUILayout.Width(50F));
 				GUILayout.FlexibleSpace ();
 				
 #if true
@@ -1410,7 +1417,7 @@ namespace CraftImport
 					
 #else
 					//GUILayout.FlexibleSpace ();
-					if (GUILayout.Button ("Picture or Imgur album url:")) {
+					if (GUILayout.Button ("Pic or Imgur url:", GUILayout.Width(125F))) {
 						downloadState = downloadStateType.FILESELECTION;
 						if (m_textPath == null)
 							m_textPath = "";
@@ -1438,7 +1445,7 @@ namespace CraftImport
 					GUILayout.EndHorizontal ();
 
 					GUILayout.BeginHorizontal ();
-					GUILayout.Label ("Video url:");
+					GUILayout.Label ("Video url:", GUILayout.Width (100F));
 					GUILayout.FlexibleSpace ();
 
 					videoUrl = GUILayout.TextField (videoUrl, GUILayout.Width (300F));
@@ -1489,10 +1496,10 @@ namespace CraftImport
 					GUILayout.Label ("", GUILayout.Height (10F));
 					GUILayout.EndHorizontal ();
 
-					DrawTitle ("KerbalX Info");
+					DrawTitle ("KerbalX Info", GUILayout.Width (150F));
 
 					GUILayout.BeginHorizontal ();
-					GUILayout.Label ("Enter userid:", styleLabel);
+					GUILayout.Label ("Enter userid:", styleLabel, GUILayout.Width (125F));
 
 					
 #if true
@@ -1504,23 +1511,26 @@ namespace CraftImport
 					GUILayout.Label ("", GUILayout.Width (20F));
 					GUILayout.Label ("Save userid:", GUILayout.Width (100F));
 					saveUid = GUILayout.Toggle (saveUid, "");
+					GUILayout.FlexibleSpace ();
 
 
 					GUILayout.EndHorizontal ();
 
 
 					GUILayout.BeginHorizontal ();
-					GUILayout.Label ("Enter password:", styleLabel);
+					GUILayout.Label ("Enter password:", styleLabel, GUILayout.Width (125F));
 					GUILayout.FlexibleSpace ();
 
 					pswd = GUILayout.PasswordField (pswd, '*', 25, GUILayout.Width (150F));
 					GUILayout.Label ("", GUILayout.Width (20F));
 					GUILayout.Label ("Save password:", GUILayout.Width (100F));
 
+
 					if (!saveUid)
 						savePswd = false;
 
 					savePswd = GUILayout.Toggle (savePswd, "");
+					GUILayout.FlexibleSpace ();
 					GUILayout.EndHorizontal ();
 
 					GUILayout.BeginHorizontal ();
@@ -1529,7 +1539,7 @@ namespace CraftImport
 
 					GUILayout.BeginHorizontal ();
 					GUILayout.FlexibleSpace ();
-					if (GUILayout.Button ("Upload to KerbalX", GUILayout.Width (125.0f), GUILayout.Height (40))) {
+					if (GUILayout.Button ("Upload to KerbalX", GUILayout.Width (150.0f), GUILayout.Height (40))) {
 						if (thisCI.configuration.showWarning &&
 						    (pictureUrl == "" || pictureUrl.StartsWith ("file://"))) {
 							downloadState = downloadStateType.SHOW_WARNING;
@@ -1929,13 +1939,9 @@ namespace CraftImport
 		void guiCase ()
 		{
 			GUILayout.BeginHorizontal ();
-			GUILayout.Label ("Enter Craft URL:");
-			GUILayout.FlexibleSpace ();
-			//GUILayout.EndHorizontal ();
+			GUILayout.Label ("Enter Craft URL:", GUILayout.MinWidth (150F));
 
-			//GUILayout.BeginHorizontal ();
 			GUILayout.FlexibleSpace ();
-
 
 			craftURL = GUILayout.TextField (craftURL, GUILayout.MinWidth (50F), GUILayout.MaxWidth (300F));
 			craftURL = craftURL.Replace("\n", "").Replace("\r", "");
@@ -1945,11 +1951,11 @@ namespace CraftImport
 			GUILayout.EndHorizontal ();
 
 			GUILayout.BeginHorizontal ();
-			GUILayout.Label ("Rename craft to:");
+			GUILayout.Label ("Rename craft to:", GUILayout.MinWidth (150F));
 			GUILayout.FlexibleSpace ();
 			//GUILayout.EndHorizontal ();
 			//GUILayout.BeginHorizontal ();
-			GUILayout.FlexibleSpace ();
+			//GUILayout.FlexibleSpace ();
 			newCraftName = GUILayout.TextField (newCraftName, GUILayout.MinWidth (50F), GUILayout.MaxWidth (300F));
 			newCraftName = newCraftName.Replace("\n", "").Replace("\r", "");
 			GUILayout.EndHorizontal ();
@@ -1966,11 +1972,11 @@ namespace CraftImport
 			GUILayout.EndHorizontal ();
 
 			GUILayout.BeginHorizontal ();
-			GUILayout.Label ("Sandbox:");
+			GUILayout.Label ("Sandbox:", GUILayout.Width (60F));
 			saveInSandbox = GUILayout.Toggle (saveInSandbox, "");
 			GUILayout.FlexibleSpace ();
 
-			GUILayout.Label ("Original:");
+			GUILayout.Label ("Original:", GUILayout.Width (60F));
 			saveInShipDefault = GUILayout.Toggle (saveInShipDefault, "");
 			if (saveInShipDefault) {
 				saveInVAB = false;
@@ -1978,28 +1984,30 @@ namespace CraftImport
 			}
 			GUILayout.FlexibleSpace ();
 
-			GUILayout.Label ("VAB:");
+			GUILayout.Label ("VAB:", GUILayout.Width (35F));
 			saveInVAB = GUILayout.Toggle (saveInVAB, "");
 			if (saveInVAB) {
 				saveInShipDefault = false;
 				saveInSPH = false;
 			}
 			GUILayout.FlexibleSpace ();
-			GUILayout.Label ("SPH:");
+			GUILayout.Label ("SPH:", GUILayout.Width (35F));
 			saveInSPH = GUILayout.Toggle (saveInSPH, "");
 			if (saveInSPH) {
 				saveInShipDefault = false;
 				saveInVAB = false;
 			}
+			GUILayout.FlexibleSpace ();
+
 			GUILayout.EndHorizontal ();
 			GUILayout.BeginHorizontal ();
 			GUILayout.FlexibleSpace ();
-			GUILayout.Label ("(subassemblies from KerbalX will always be saved in the Subassembliees)", styleLabel);
+			GUILayout.Label ("(subassemblies from KerbalX will always be saved in the Subassembliees)", styleLabel, GUILayout.Width (350F));
 			GUILayout.FlexibleSpace ();
 			GUILayout.EndHorizontal ();
 
 			GUILayout.BeginHorizontal ();
-			GUILayout.Label ("Overwrite existing file if exists:", GUILayout.Width (200F));
+			GUILayout.Label ("Overwrite existing file if exists:", GUILayout.Width (300F));
 			//GUILayout.FlexibleSpace ();
 			overwriteExisting = GUILayout.Toggle (overwriteExisting, "");
 			GUILayout.FlexibleSpace ();
@@ -2084,7 +2092,7 @@ namespace CraftImport
 			GUILayout.EndHorizontal ();
 
 			GUILayout.BeginHorizontal ();
-			DrawTitle ("Options");
+			DrawTitle ("Options", GUILayout.Width(50F));
 			GUILayout.EndHorizontal ();
 
 			GUILayout.BeginHorizontal ();
@@ -2393,7 +2401,13 @@ namespace CraftImport
 			//GUILayout.FlexibleSpace ();
 			GUILayout.EndHorizontal ();
 		}
-
+		private void DrawTitle (String text, GUILayoutOption layout)
+		{
+			GUILayout.BeginHorizontal ();
+			GUILayout.Label (text, HighLogic.Skin.label, layout);
+			//GUILayout.FlexibleSpace ();
+			GUILayout.EndHorizontal ();
+		}
 		public void GUI_SaveData ()
 		{
 			thisCI.configuration.useBlizzyToolbar = newUseBlizzyToolbar;

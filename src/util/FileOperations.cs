@@ -13,7 +13,7 @@ namespace CraftImport
 {
 	public  class FileOperations
 	{
-		public static readonly String ROOT_PATH = KSPUtil.ApplicationRootPath.Substring (0, KSPUtil.ApplicationRootPath.Length - 12);
+		public static readonly String ROOT_PATH = KSPUtil.ApplicationRootPath.Substring (0, KSPUtil.ApplicationRootPath.Length - 16);
 		//public static readonly String ROOT_PATH = KSPUtil.ApplicationRootPath;
 		private static readonly String CONFIG_BASE_FOLDER = ROOT_PATH + "GameData/";
 		private static String CI_BASE_FOLDER = CONFIG_BASE_FOLDER + "CraftImport/";
@@ -23,7 +23,13 @@ namespace CraftImport
 		private static ConfigNode configFile = null;
 		private static ConfigNode configFileNode = null;
 
-
+		static void showStatics()
+		{
+			Log.Info ("ROOT_PATH: " + ROOT_PATH);
+			Log.Info ("CONFIG_BASE_FOLDER: " + CONFIG_BASE_FOLDER);
+			Log.Info ("CI_BASE_FOLDER: " + CI_BASE_FOLDER);
+			Log.Info ("CI_BASE_FOLDER: " + CI_BASE_FOLDER);
+		}
 
 #if (!_UNLIMITED_FILE_ACCESS)
 		public static bool InsideApplicationRootPath(String path)
@@ -53,6 +59,8 @@ namespace CraftImport
 
 		public static void SaveConfiguration (Configuration configuration, String file)
 		{
+			showStatics ();
+
 			if (configFile == null) {
 				configFile = new ConfigNode ();
 			}
@@ -127,6 +135,8 @@ namespace CraftImport
 		}
 		public static void LoadConfiguration (Configuration configuration, String file)
 		{
+			showStatics ();
+
 			configFile = ConfigNode.Load (CI_CFG_FILE);
 	
 			if (configFile != null) {

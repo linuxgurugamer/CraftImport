@@ -3,7 +3,7 @@
 using System;
 using UnityEngine;
 //using KSP.IO;
-
+using KSP.UI.Screens;
 
 //using System.Globalization;
 
@@ -48,6 +48,7 @@ namespace CraftImport
 
 		public void Start ()
 		{
+			
 			//DontDestroyOnLoad (this);
 			configuration = new Configuration ();
 			configuration.Load ();
