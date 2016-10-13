@@ -2324,7 +2324,7 @@ namespace CraftImport
 				if (instructions != "") {
 					if (GUILayout.Button ("Copy to clipboard")) {
 						TextEditor te = new TextEditor ();
-						te.content = new GUIContent (instructions);
+						te.text = instructions;
 						te.SelectAll ();
 						te.Copy ();
 					}
