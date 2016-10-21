@@ -32,3 +32,7 @@
 0.8.2		Fixed a couple of null ref exceptions
 			Blocked KerbalX from downloads due to security problem on site
 			Added message about kerbalx being blocked
+
+0.8.4		updated for 1.2
+
+0.8.5		Fixed problem with ToolbarWrapper

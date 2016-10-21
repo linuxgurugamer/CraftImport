@@ -132,7 +132,7 @@
     <None Include="src\Textures\CI-file.png" />
   </ItemGroup>
   <PropertyGroup>
-    <PostBuildEvent>if $(ConfigurationName) == Release (
+    <PostBuildEvent>if $(ConfigurationName) == ReleaseExport (
 start /D D:\Users\jbb\github\CraftImport /WAIT buildRelease.bat
 )
 </PostBuildEvent>
