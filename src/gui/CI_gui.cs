@@ -73,7 +73,7 @@ namespace CraftImport
 			return "http://kerbalx-stage.herokuapp.com";
 			#else
 			// The following is so that the kebalx-stage server can be accessed without changing any code
-			// simply by adding a file 
+			// simply by adding a file
 			if (!System.IO.File.Exists (FileOperations.ROOT_PATH + "GameData/" + CI.MOD_DIR + "devmode.txt")) {
 				return "https://kerbalx.com";
 			} else {
@@ -121,14 +121,13 @@ namespace CraftImport
 		public void Awake ()
 		{
 			if (!firstAwake) {
-				
+
 				//RenderingManager.AddToPostDrawQueue (0, new Callback (DrawCall));
 				firstAwake = true;
-			}
 
-			//register for the event
-			styleItems.SelectionChanged += styleItemSelectionChanged;
-		
+				//register for the event
+				styleItems.SelectionChanged += styleItemSelectionChanged;
+			}
 		}
 
 
@@ -164,8 +163,8 @@ namespace CraftImport
 
 				styleItems.styleListSelectedItem = new GUIStyle (GUI.skin.box);
 				styleItems.styleListSelectedItem.fixedWidth = 150F;
-				styleItems.styleListSelectedItem.alignment = TextAnchor.MiddleLeft; 
-				
+				styleItems.styleListSelectedItem.alignment = TextAnchor.MiddleLeft;
+
 				styleItems.styleListBlocker = new GUIStyle ();
 
 				Texture2D texInitListBox = new Texture2D (1, 1);
@@ -223,8 +222,8 @@ namespace CraftImport
 			if (!file.StartsWith ("http://") && !file.StartsWith ("https://") && !file.StartsWith ("ftp://")) {
 				return false;
 			}
-					
-				
+
+
 			if (urlType == "video") {
 				// Youtube will only be either http or https
 				if (file.StartsWith ("http://") || file.StartsWith ("https://")) {
@@ -261,8 +260,8 @@ namespace CraftImport
 							}
 						}
 						exists = exists & b;
-					} else { 
-						
+					} else {
+
 #if false
 						// urlType == "video"
 						Log.Info("video");
@@ -292,7 +291,7 @@ namespace CraftImport
 
 		internal MainMenuGui ()
 		{
-			
+
 			blizzyToolbarInstalled = ToolbarManager.ToolbarAvailable;
 		}
 
@@ -306,7 +305,7 @@ namespace CraftImport
 //			Log.Info ("OnGUIHideApplicationLauncher: BlizzyToolbarIsAvailable: " + thisCI.configuration.BlizzyToolbarIsAvailable.ToString () +
 //				"   useBlizzyToolbar: " + thisCI.configuration.useBlizzyToolbar.ToString ());
 			if (!appLaucherHidden) {
-				
+
 				if (thisCI.configuration.BlizzyToolbarIsAvailable && thisCI.configuration.useBlizzyToolbar) {
 					HideToolbarStock ();
 					appLaucherHidden = true;
@@ -343,7 +342,7 @@ namespace CraftImport
 					CI_button_img = GameDatabase.Instance.GetTexture (CI.TEXTURE_DIR + "CI-38", false);
 				//if (GameDatabase.Instance.ExistsTexture (CI.TEXTURE_DIR + "CI-folder"))
 				//	CI_button_off = GameDatabase.Instance.GetTexture (CI.TEXTURE_DIR + "CI-folder", false);
-				
+
 
 				CI_Texture_Load = true;
 			}
@@ -368,7 +367,7 @@ namespace CraftImport
 		}
 
 		public bool Visible ()
-		{ 
+		{
 			return this.visible;
 		}
 
@@ -489,7 +488,7 @@ namespace CraftImport
 				System.IO.File.WriteAllText (saveFile, strCraftFile);
 
 				downloadState = downloadStateType.COMPLETED;
-			} catch (Exception e) { 
+			} catch (Exception e) {
 				Log.Info ("Error: " + e);
 
 				//downloadErrorMessage = download.error;
@@ -572,7 +571,7 @@ namespace CraftImport
 					instructions += "You can download the craft file using a browser, and then import using this mod.\n\n";
 					instructions += "The mod will be updated again once the security issues with the site have been fixed";
 					yield break;
-						
+
 				}
 				// Create a download object
 				Log.Info ("s: " + s);
@@ -604,7 +603,7 @@ namespace CraftImport
 							subassembly = true;
 					}
 					bool b = saveCraftFile (craftDownload.text, subassembly);
-		
+
 					Log.Info ("After saveCraftFile, b: " + b.ToString());
 					saveInSandbox = false;
 					overwriteExisting = false;
@@ -662,7 +661,7 @@ namespace CraftImport
 								bool missing, anymissing = false;
 								instructions = "";
 								if (j ["mods"].Count > 0) {
-									
+
 									// The following is very inefficient
 									for (int i1 = 0; i1 < j ["mods"].Count; i1++) {
 										missing = true;
@@ -678,7 +677,7 @@ namespace CraftImport
 											anymissing = true;
 											loadAfterImport = false;
 											instructions += "      " + j ["mods"] [i1] + "\r\n";
-										
+
 										}
 									}
 								}
@@ -703,7 +702,7 @@ namespace CraftImport
 										instructions += "     " + m + "\r\n";
 									}
 									instructions += "\r\n";
-								} 
+								}
 								checkMissingParts (craftDownload.text);
 									// instructions = "You should be able to load the craft in either the VAB or SPH";
 
@@ -738,7 +737,7 @@ namespace CraftImport
 		}
 
 		#if EXPORT
-		
+
 		string uid = "";
 		string pswd = "";
 
@@ -789,7 +788,7 @@ namespace CraftImport
 
 		public void ConvertToJPG (string originalFile, string newFile, Color background, int quality = 75)
 		{
-			
+
 			Texture2D png = new Texture2D (1, 1);
 
 			byte[] pngData = System.IO.File.ReadAllBytes (originalFile);
@@ -881,7 +880,7 @@ namespace CraftImport
 								yield break;
 							} else
 								pictureUrl = thumbnailPath;
-	
+
 							if (pictureUrl.StartsWith ("http://imgur.com/") || pictureUrl.Length == 5) {
 								string[] p = pictureUrl.Split ('/');
 								pictureUrl = "[imgur]" + p.Last () + "[/imgur]";
@@ -933,7 +932,7 @@ namespace CraftImport
 									Log.Info ("deleting: " + pngToConvert);
 									System.IO.FileInfo file = new System.IO.FileInfo (pngToConvert);
 									file.Delete ();
-								} 
+								}
 								//	deleteJpg = true;
 								jpgToDelete = true;
 								pictureUrl = "file://" + convertedJpg;
@@ -953,7 +952,7 @@ namespace CraftImport
 								//		}
 							}
 						} else {
-							n ["picture_url"] = pictureUrl;					
+							n ["picture_url"] = pictureUrl;
 						}
 					}
 
@@ -976,7 +975,7 @@ namespace CraftImport
 						actionGroups [i] = actionGroups [i].Trim ();
 						if (actionGroups [i] != "")
 							actionGroupSpecified = true;
-						//if (actionGroups [i] != "") 
+						//if (actionGroups [i] != "")
 						{
 							if (i < 10) {
 								hash = (i + 1).ToString ();
@@ -1001,7 +1000,7 @@ namespace CraftImport
 					yield   return upload;
 
 					instructions = "";
-				
+
 					if (!String.IsNullOrEmpty (upload.error)) {
 						Log.Error ("Error uploading: " + upload.error);
 						uploadErrorMessage = upload.error;
@@ -1015,7 +1014,7 @@ namespace CraftImport
 								Log.Info (entry.Key + "=" + entry.Value);
 							}
 						}
-							
+
 						downloadState = downloadStateType.UPLOAD_COMPLETED;
 						craftURL = "";
 						//instructions = upload.text + "\n" + thumbnailPath;
@@ -1129,7 +1128,7 @@ namespace CraftImport
 						downloadState = downloadStateType.SELECT_DUP_CRAFT;
 
 					}
-					
+
 				}
 
 			} else
@@ -1287,11 +1286,11 @@ namespace CraftImport
 		{
 			GUI.skin = HighLogic.Skin;
 
+			#if EXPORT
 			if (Event.current.type == EventType.Repaint || Event.current.isMouse)
 			{
 				DrawCall(); // Your current on preDrawQueue code
 			}
-			#if EXPORT
 			Awake ();
 			#endif
 
@@ -1300,7 +1299,7 @@ namespace CraftImport
 
 			if (m_fileBrowser != null) {
 				if (!fileBrowserEnabled) {
-					
+
 					m_fileBrowser = null;
 					downloadState = downloadStateType.GUI;
 
@@ -1357,7 +1356,7 @@ namespace CraftImport
 
 				// Need to add the following:
 
-				//tags (space separated string), 
+				//tags (space separated string),
 				//style (string, one of [ship aircraft spaceplane lander satellite station base probe rover lifter], if none provided will default to 'ship') *1
 				//description (string, additional text about the craft, KX will also read the description from the craft file)
 				//action_groups (hash of group_name => string-description only the keys [abort gears brakes lights RCS SAS 0, 1..9] will be read)
@@ -1389,7 +1388,7 @@ namespace CraftImport
 				GUILayout.BeginHorizontal ();
 				GUILayout.Label ("Style:", GUILayout.Width(50F));
 				GUILayout.FlexibleSpace ();
-				
+
 #if true
 				//This draws the button and displays/hides the listbox - returns true if someone clicked the button
 			//	if (styleItems.styleListSelectedItem == null)
@@ -1414,7 +1413,7 @@ namespace CraftImport
 #if false
 					styleLabel.normal.textColor = Color.yellow;
 					GUILayout.Label ("Picture or Imgur album url:", styleLabel);
-					
+
 #else
 					//GUILayout.FlexibleSpace ();
 					if (GUILayout.Button ("Pic or Imgur url:", GUILayout.Width(125F))) {
@@ -1501,7 +1500,7 @@ namespace CraftImport
 					GUILayout.BeginHorizontal ();
 					GUILayout.Label ("Enter userid:", styleLabel, GUILayout.Width (125F));
 
-					
+
 #if true
 					GUILayout.FlexibleSpace ();
 					uid = GUILayout.TextField (uid, GUILayout.Width (150F));
@@ -1604,7 +1603,7 @@ namespace CraftImport
 					//Application.OpenURL (uploadServer + craftUrls [i]);
 					openUrl (uploadServer () + "/crafts/" + ids [i]);
 				}
-				
+
 #if false
 				// Get the last rect to display the line
 				var lastRect = GUILayoutUtility.GetLastRect();
@@ -1623,7 +1622,7 @@ namespace CraftImport
 				GUILayout.EndHorizontal ();
 			}
 			GUILayout.EndVertical ();
-			GUILayout.EndScrollView (); 
+			GUILayout.EndScrollView ();
 			GUILayout.EndHorizontal ();
 
 			GUILayout.BeginHorizontal ();
@@ -1634,7 +1633,7 @@ namespace CraftImport
 			if (lastSelectedCraft >= 0) {
 				if (GUILayout.Button ("OK", GUILayout.Width (125.0f))) {
 					downloadState = downloadStateType.UPLOAD;
-				} 
+				}
 			} else {
 				if (GUILayout.Button ("Cancel", GUILayout.Width (125.0f))) {
 					downloadState = downloadStateType.UPLOAD;
@@ -1877,7 +1876,7 @@ namespace CraftImport
 					Log.Info ("Capturing thumbnail");
 					ThumbnailHelper.CaptureThumbnail (ship, newresolution, newelevation, newazimuth, newpitch, newheading, newfov,
 						"screenshots", ship.shipName);
-					
+
 					pictureUrl = "file://" + FileOperations.ROOT_PATH + "Screenshots/" + ship.shipName + ".png";
 					jpgToDelete = true;
 					string pngToConvert = pictureUrl.Substring (7);
@@ -2038,7 +2037,7 @@ namespace CraftImport
 						m_textPath += "/VAB";
 					if (EditorDriver.editorFacility == EditorFacility.SPH)
 						m_textPath += "/SPH";
-					
+
 				}
 				Log.Info ("m_textPath: " + m_textPath);
 				if (m_textPath.Contains (".craft"))
@@ -2085,7 +2084,7 @@ namespace CraftImport
 				resetBeforeExit ();
 				//GUIToggle ();
 			}
-				
+
 			#else
 			GUILayout.Label (" ");
 			#endif
@@ -2138,7 +2137,7 @@ namespace CraftImport
 				colorPicker = new Texture2D (2, 2);
 				colorPicker.LoadImage (colorPickerFileData); //..this will auto-resize the texture dimensions.
 
-			} 
+			}
 
 			SetVisible (true);
 			GUI.enabled = true;
@@ -2196,7 +2195,7 @@ namespace CraftImport
 					GUILayout.EndHorizontal ();
 				}
 				GUILayout.EndVertical ();
-				GUILayout.EndScrollView (); 
+				GUILayout.EndScrollView ();
 				GUILayout.EndHorizontal ();
 
 				GUILayout.BeginHorizontal ();
@@ -2205,7 +2204,7 @@ namespace CraftImport
 				GUILayout.BeginHorizontal ();
 				GUILayout.FlexibleSpace ();
 				if (GUILayout.Button ("OK", GUILayout.Width (125.0f))) {
-					
+
 					downloadState = downloadStateType.UPLOAD;
 				}
 				GUILayout.FlexibleSpace ();
@@ -2213,7 +2212,7 @@ namespace CraftImport
 				GUILayout.EndHorizontal ();
 				break;
 #endif
-				
+
 			case downloadStateType.GUI:
 				guiCase ();
 				break;
@@ -2284,7 +2283,7 @@ namespace CraftImport
 					GUILayout.Label ("Download completed");
 				else
 					GUILayout.Label ("Upload completed");
-				
+
 				GUILayout.FlexibleSpace ();
 				GUILayout.EndHorizontal ();
 				GUILayout.BeginHorizontal ();
@@ -2311,7 +2310,7 @@ namespace CraftImport
 						if (!subassembly)
 							EditorLogic.LoadShipFromFile (saveFile);
 						else {
-							if (EditorLogic.RootPart) 
+							if (EditorLogic.RootPart)
 								LoadCraftAsSubassembly (saveFile);
 						//	ShipConstruct ship = ShipConstruction.LoadShip (craftURL);
 						//	EditorLogic.SpawnConstruct (ship);
@@ -2418,7 +2417,7 @@ namespace CraftImport
 
 		public void set_CI_Button_active ()
 		{
-			
+
 			if (!thisCI.configuration.useBlizzyToolbar) {
 				CI_Button.SetTexture (CI_button_img);
 
@@ -2469,7 +2468,7 @@ namespace CraftImport
 			CIInfoDisplay.infoDisplayActive = !CIInfoDisplay.infoDisplayActive;
 			if (CIInfoDisplay.infoDisplayActive) {
 				initGUIToggle ();
-				CI_Button.SetTexture (CI_button_img); 
+				CI_Button.SetTexture (CI_button_img);
 
 			} else {
 				endGUIToggle ();
