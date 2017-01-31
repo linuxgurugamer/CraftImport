@@ -36,3 +36,7 @@
 0.8.4		updated for 1.2
 
 0.8.5		Fixed problem with ToolbarWrapper
+
+0.8.6
+			Added autoupdate of the AssemblyVersion
+			Merged PR from @HebaruSan to fix memory leak
