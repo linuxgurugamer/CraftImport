@@ -1,0 +1,42 @@
+﻿0.1.0		initial release
+
+0.2.0		Fixed bug where showDrives wasn't being honored, so that drives were always being shown
+0.3.0		Removed unnecessary dialog for file selection
+			Added initial error checking for valid craft file, more needs to be done
+			Changed file selection to only show directories and craft files
+			Fixed bug where after you download one file, you can't do any more.  Related to unnecessary dialog
+0.4.0		Added integration with KerbalX.  CKan file is downloaded and saved in case the imported craft file
+			needs additional mods to be used, and then provides instructions on screen 
+
+0.5.0		Changed visibility to only be visible in VAB and SPH
+			If no http/https/file is at the beginning of the craft name, checks to see if it is
+			a local file.  If not, it prepends "http://"
+			Added "OK" button in case of error, will return to GUI screen with craftURL intact for retrying
+0.5.1		Fixed typo which prevented ALL downloads or copies
+0.6.5		Integration with KerbalX.com.  Upload functionality now added
+0.6.8		Upload functionality + ship snapshot
+			Added option to load craft after import
+			Added option to copy text to clipboard
+			Made Import and Upload to KerbalX buttons bigger
+			Changed spacing of elements on upload screen
+			Added check to see if downloaded craft has all necessary mods
+			Added check for login error
+			Added check to see if all parts needed are available
+			Generated image is dynamically updated as values are edited.
+0.7.0		Release
+0.7.1		Removed code which prevented destruction of data on scene load
+0.8.0		1.0.5 compatibility
+0.8.1		Fixed issue with lagging during flight
+			Fixed locking of screen when exiting editor while settings window was open
+
+0.8.2		Fixed a couple of null ref exceptions
+			Blocked KerbalX from downloads due to security problem on site
+			Added message about kerbalx being blocked
+
+0.8.4		updated for 1.2
+
+0.8.5		Fixed problem with ToolbarWrapper
+
+0.8.6
+			Added autoupdate of the AssemblyVersion
+			Merged PR from @HebaruSan to fix memory leak

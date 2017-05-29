@@ -1,13 +1,25 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 11.00
-# Visual Studio 2010
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 14
+VisualStudioVersion = 14.0.25420.1
+MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CraftImport", "CraftImport.csproj", "{4627D050-5352-4091-B376-5ABBDDB73B8D}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SolutionItems", "SolutionItems", "{846DBBE2-E2DC-4E76-BB77-DE78B22C54C1}"
+	ProjectSection(SolutionItems) = preProject
+		buildRelease.bat = buildRelease.bat
+		ChangeLog.txt = ChangeLog.txt
+		craftimport.version = craftimport.version
+		LICENSE = LICENSE
+		README.md = README.md
+		README.txt = README.txt
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
-		Release|Any CPU = Release|Any CPU
 		DebugExport|Any CPU = DebugExport|Any CPU
+		Release|Any CPU = Release|Any CPU
 		ReleaseExport|Any CPU = ReleaseExport|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
@@ -19,5 +31,8 @@ Global
 		{4627D050-5352-4091-B376-5ABBDDB73B8D}.Release|Any CPU.Build.0 = Release|Any CPU
 		{4627D050-5352-4091-B376-5ABBDDB73B8D}.ReleaseExport|Any CPU.ActiveCfg = ReleaseExport|Any CPU
 		{4627D050-5352-4091-B376-5ABBDDB73B8D}.ReleaseExport|Any CPU.Build.0 = ReleaseExport|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
 	EndGlobalSection
 EndGlobal
