@@ -40,3 +40,9 @@
 0.8.6
 			Added autoupdate of the AssemblyVersion
 			Merged PR from @HebaruSan to fix memory leak
+
+0.8.9	
+			Updated for 1.3
+
+0.8.10
+			Updated for KSP 1.3.1
