@@ -27,7 +27,7 @@
 1:CraftImport, craftimport.version
 
 # 2:PROJNAME, PROJFILE, VERSIONFILE, PLUGINSFOLDER
-2:CraftImport,CraftImport/CraftImport.csproj,craftimport.version,GameData/CraftImport/Plugins
+2:CraftImport,src/CraftImport.csproj,craftimport.version,GameData/CraftImport/Plugins
 
 # 3:SOURCEFILE, DESTDIR
 3:craftimport.version,GameData/CraftImport
