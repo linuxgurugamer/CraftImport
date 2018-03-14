@@ -1,15 +1,17 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.25420.1
+# Visual Studio 15
+VisualStudioVersion = 15.0.26730.8
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CraftImport", "CraftImport.csproj", "{4627D050-5352-4091-B376-5ABBDDB73B8D}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CraftImport", "src\CraftImport.csproj", "{4627D050-5352-4091-B376-5ABBDDB73B8D}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SolutionItems", "SolutionItems", "{846DBBE2-E2DC-4E76-BB77-DE78B22C54C1}"
 	ProjectSection(SolutionItems) = preProject
 		buildRelease.bat = buildRelease.bat
 		ChangeLog.txt = ChangeLog.txt
 		craftimport.version = craftimport.version
+		deploy.bat = deploy.bat
+		jenkins.txt = jenkins.txt
 		LICENSE = LICENSE
 		README.md = README.md
 		README.txt = README.txt
@@ -34,5 +36,8 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {4D8E9F30-FECA-4C3E-9A99-94E36DCD1389}
 	EndGlobalSection
 EndGlobal
