@@ -24,13 +24,13 @@
 # 0:1.3
 
 # 1:GAMEDIR, VERSIONFILE [, GITHUBREPO ]
-1:ConstantTWR, ConstantTWR.version
+1:CraftImport, craftimport.version
 
 # 2:PROJNAME, PROJFILE, VERSIONFILE, PLUGINSFOLDER
-2:ConstantTWR,ConstantTWR/ConstantTWR.csproj,ConstantTWR.version,GameData/ConstantTWR/Plugins
+2:CraftImport,CraftImport/CraftImport.csproj,craftimport.version,GameData/CraftImport/Plugins
 
 # 3:SOURCEFILE, DESTDIR
-3:ConstantTWR.version,GameData/ConstantTWR
+3:craftimport.version,GameData/CraftImport
 #3:LICENSE.md,GameData/KerbalHotSeat
 #3:README.md,GameData/KerbalHotSeat
 
