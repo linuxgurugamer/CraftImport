@@ -1,12 +1,16 @@
 {
   "NAME": "CraftImport",
-  "URL": "http://ksp-avc.cybutek.net/version.php?id=216",
-  "DOWNLOAD": "http://spacedock.info/mod/47/Craft%20Import%20%26%20Upload/download",
+  "URL": "https://raw.githubusercontent.com/linuxgurugamer/CraftImport/master/craftimport.version",
+  "DOWNLOAD": "https://github.com/linuxgurugamer/CraftImport/releases",
+  "GITHUB" : {
+    "USERNAME" : "linuxgurugamer",
+    "REPOSITORY" : "CraftImport"
+  },
   "VERSION": {
     "MAJOR": 0,
     "MINOR": 8,
     "PATCH": 11,
-    "BUILD": 0
+    "BUILD": 1
   },
   "KSP_VERSION": {
     "MAJOR": 1,
