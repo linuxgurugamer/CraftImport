@@ -13,8 +13,9 @@ namespace CraftImport
 	[KSPAddon (KSPAddon.Startup.EditorAny, false)]
 	public partial class CI : MonoBehaviour
 	{
+        internal static CI Instance;
 
-		public const String TITLE = "Craft Import/Upload to KerbalX";
+		public const String TITLE = "Craft Import";
 
 		//			public Configuration configuration = Configuration.Instance;
 		//			public static AS Instance { get; private set;}
@@ -48,7 +49,7 @@ namespace CraftImport
 
 		public void Start ()
 		{
-			
+            Instance = this;
 			//DontDestroyOnLoad (this);
 			configuration = new Configuration ();
 			configuration.Load ();
@@ -67,70 +68,36 @@ namespace CraftImport
 			}
 
 			configuration.BlizzyToolbarIsAvailable = ToolbarManager.ToolbarAvailable;
-			Log.Info ("BlizzyToolbarIsAvailable: " + configuration.BlizzyToolbarIsAvailable.ToString ());
-			if (configuration.BlizzyToolbarIsAvailable) {
-				InitToolbarButton ();
-				if (configuration.useBlizzyToolbar) {
-					setToolbarButtonVisibility (true);
-				} else {
-					gui.UpdateToolbarStock ();
-					setToolbarButtonVisibility (false);
-				}
-			}
-			else
-				gui.UpdateToolbarStock ();
-		}
 
-		public void Update ()
+        }
+
+        public void Update ()
 		{
 
-#if EXPORT
-	//			this.gui.Awake ();
-#endif
 			if (HighLogic.LoadedScene == GameScenes.EDITOR) {
 
-				if (!configuration.BlizzyToolbarIsAvailable || !configuration.useBlizzyToolbar) {
-					if (gui.CI_Button == null)
-						GameEvents.onGUIApplicationLauncherReady.Add (gui.OnGUIApplicationLauncherReady);
-					gui.OnGUIShowApplicationLauncher ();
-				} else {
-					setToolbarButtonVisibility (true);
-				}
-//			} else {
-//				// Not sure if this is needed
-//				if (!configuration.BlizzyToolbarIsAvailable || !configuration.useBlizzyToolbar)
-//					gui.OnGUIHideApplicationLauncher ();
-			}
+                gui.UpdateToolbarStock();
+            }
 
-		}
+        }
 
 
-		public void OnDestroy ()
+        public void OnDestroy ()
 		{
 			Log.Info ("destroying CraftImport");
-			#if EXPORT
-			//gui.OnDestroy ();
-			#endif
+
 //			uiVisiblity.OnDestroy();
 			if (InputLockManager.GetControlLock ("CraftImportLock") != ControlTypes.None) {
 				InputLockManager.RemoveControlLock ("CraftImportLock");
 			}
-			ApplicationLauncher.Instance.RemoveModApplication (gui.CI_Button);
-		//	DelToolbarButton ();
-			configuration.Save ();
+
+            MainMenuGui.Instance.toolbarControl.OnDestroy();
+            Destroy(MainMenuGui.Instance.toolbarControl);
+
+            //	DelToolbarButton ();
+            configuration.Save ();
 		}
 
-		#if false
-		public static KeyCode setActiveKeycode (string keycode)
-		{
-			CI.activeKeycode = (KeyCode)Enum.Parse (typeof(KeyCode), keycode);
-			if (CI.activeKeycode == KeyCode.None) {
-				Log.Warning ("Make sure to use the list of keys to set the key! Reverting to F6");
-				CI.activeKeycode = KeyCode.F6;
-			}
-		
-			return CI.activeKeycode;
-		}
-		#endif
+
 	}
 }

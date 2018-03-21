@@ -9,18 +9,19 @@ namespace CraftImport
 {
 	public partial class CI : MonoBehaviour
     {
-		static IButton btnReturn = null;
+		//static IButton btnReturn = null;
 		private const string _tooltipOn = "Hide Craft Import";
 		private const string _tooltipOff = "Show Craft Import";
 		public const string MOD_DIR = "CraftImport/";
 		public const string TEXTURE_DIR = MOD_DIR + "Textures/";
 
-		public void setToolbarButtonVisibility(bool v)
+#if false
+        public void setToolbarButtonVisibility(bool v)
 		{
 
 			btnReturn.Visible = v;
 		}
-
+#endif
 		public void ToolbarToggle()
 		{
 			Log.Info ("ToolbarToggle, visible: " + gui.Visible().ToString());
@@ -28,10 +29,11 @@ namespace CraftImport
 				gui.endGUIToggle ();
 				gui.SetVisible (false);
 				GUI.enabled = false;
-				btnReturn.ToolTip = _tooltipOff;
 				gui.GUI_SaveData ();
-
-				if (gui.thisCI.configuration.BlizzyToolbarIsAvailable && gui.thisCI.configuration.useBlizzyToolbar) {
+#if false
+                
+				btnReturn.ToolTip = _tooltipOff;
+                if (gui.thisCI.configuration.BlizzyToolbarIsAvailable && gui.thisCI.configuration.useBlizzyToolbar) {
 					btnReturn.TexturePath = TEXTURE_DIR + "CI-24";
 					gui.OnGUIHideApplicationLauncher ();
 					//InitToolbarButton ();
@@ -50,25 +52,29 @@ namespace CraftImport
 					setToolbarButtonVisibility(false);
 
 				}
-				configuration.Save ();
-				ToolBarActive ();
+                               ToolBarActive();
+#endif
+                configuration.Save ();
+ 
 			} else {
 				gui.initGUIToggle ();
 				//gui.SetVisible (true);
 				GUI.enabled = true;
-				btnReturn.ToolTip = _tooltipOn;
+#if fale
+                btnReturn.ToolTip = _tooltipOn;
 
 				btnReturn.TexturePath = TEXTURE_DIR + "CI-24";
-
+#endif
 				//InputLockManager.SetControlLock((ControlTypes.EDITOR_LOCK | ControlTypes.EDITOR_GIZMO_TOOLS), "CraftImportLock");
 			}
 		}
-
-		public /*static*/ void  ToolBarActive()
+#if false
+        public /*static*/ void  ToolBarActive()
 		{
 				btnReturn.TexturePath = TEXTURE_DIR + "CI-24";
 		}
-
+#endif
+#if false
 
         /// <summary>
         /// initialises a Toolbar Button for this mod
@@ -110,6 +116,6 @@ namespace CraftImport
             }
             btnToDestroy = null;
         }
-
+#endif
     }
 }
