@@ -72,8 +72,7 @@ namespace CraftImport
 					configFileNode = configFile.GetNode (CI_NODENAME);
 				}
 			}
-
-			configFileNode.SetValue ("useBlizzyToolbar", configuration.useBlizzyToolbar.ToString (), true);
+            
 			configFileNode.SetValue ("lastImportDir", configuration.lastImportDir, true);
 			configFileNode.SetValue ("showDrives", configuration.showDrives.ToString (), true);
 			configFileNode.SetValue ("userid", configuration.uid, true);
@@ -142,7 +141,6 @@ namespace CraftImport
 			if (configFile != null) {
 				configFileNode = configFile.GetNode (CI_NODENAME);
 				if (configFileNode != null) {
-					configuration.useBlizzyToolbar = bool.Parse (SafeLoad(configFileNode.GetValue ("useBlizzyToolbar"),configuration.useBlizzyToolbar));
 					configuration.lastImportDir = SafeLoad(configFileNode.GetValue ("lastImportDir"),configuration.lastImportDir);
 					configuration.showDrives = bool.Parse (SafeLoad(configFileNode.GetValue ("showDrives"),configuration.showDrives));
 					configuration.pswd = SafeLoad(configFileNode.GetValue("password"), "");

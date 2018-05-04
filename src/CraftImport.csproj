@@ -82,6 +82,7 @@
       <DependentUpon>AssemblyVersion.tt</DependentUpon>
     </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="ToolbarRegistration.cs" />
     <Compile Include="util\Configuration.cs" />
     <Compile Include="util\Log.cs" />
     <Compile Include="util\FileOperations.cs" />

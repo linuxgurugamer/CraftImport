@@ -54,3 +54,8 @@
 			Added option to load as assembly
 			Added code to check for comment after ship name  in craft file
 			Added localizer code in case ship name is localized
+
+0.8.11.2
+	Updated version info for all 1.4
+	Updated toolbarControl usage to use registration
+	Removed all Blizzy options lines

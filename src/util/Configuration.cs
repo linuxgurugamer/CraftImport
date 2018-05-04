@@ -16,7 +16,7 @@ namespace CraftImport
 		[Persistent] public Log.LEVEL logLevel { get; set; }
 
 //		public bool screenshotAtIntervals { get; set; }
-		public bool useBlizzyToolbar { get; set; }
+
 		public string lastImportDir { get; set; }
 		public bool showDrives { get; set; }
 		//public string ckanExecPath { get; set; }
@@ -64,7 +64,7 @@ namespace CraftImport
 #else
 			logLevel = Log.LEVEL.WARNING;
 #endif
-			useBlizzyToolbar = false;
+
 			lastImportDir = "";
 			//ckanExecPath = "";
 			showWarning = true;

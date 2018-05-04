@@ -46,7 +46,7 @@ namespace CraftImport
 
         public static Texture2D CI_button_img = new Texture2D(38, 38, TextureFormat.ARGB32, false);
 
-        private bool CI_Texture_Load = false;
+        //private bool CI_Texture_Load = false;
 
         private bool cfgWinData = false;
         //		private static bool newScreenshotAtIntervals = true;
@@ -91,6 +91,8 @@ namespace CraftImport
             blizzyToolbarInstalled = ToolbarManager.ToolbarAvailable;
         }
 
+        internal const string MODID = "craftImport_NS";
+        internal const string MODNAME = "CraftImport";
 
         public void UpdateToolbarStock()
         {
@@ -101,13 +103,12 @@ namespace CraftImport
                 toolbarControl = gameObject.AddComponent<ToolbarControl>();
                 toolbarControl.AddToAllToolbars(GUIToggle, GUIToggle,
                    ApplicationLauncher.AppScenes.SPH | ApplicationLauncher.AppScenes.VAB,
-                    "craftImport_NS",
+                    MODID,
                     "craftImportButton",
                     CI.TEXTURE_DIR + "CI-38",
                     CI.TEXTURE_DIR + "CI-24",
-                    "CraftImport"
+                    MODNAME
                 );
-                toolbarControl.UseBlizzy(CI.Instance.gui.thisCI.configuration.useBlizzyToolbar);
 
             }
         }
@@ -646,8 +647,6 @@ namespace CraftImport
         /////////////////////////////////////
         public void OnGUI()
         {
-            if (toolbarControl != null)
-                toolbarControl.UseBlizzy(CI.Instance.gui.thisCI.configuration.useBlizzyToolbar);
 
             GUI.skin = HighLogic.Skin;
 
@@ -878,7 +877,7 @@ namespace CraftImport
             if (cfgWinData == false)
             {
                 cfgWinData = true;
-                newUseBlizzyToolbar = thisCI.configuration.useBlizzyToolbar;
+
                 //newShowDrives = CI.configuration.showDrives;
                 //newCkanExecPath = CI.configuration.ckanExecPath;
                 craftURL = "";
@@ -1082,7 +1081,6 @@ namespace CraftImport
         }
         public void GUI_SaveData()
         {
-            thisCI.configuration.useBlizzyToolbar = newUseBlizzyToolbar;
             //CI.configuration.ckanExecPath = newCkanExecPath;
             //CI.configuration.showDrives = newShowDrives;
             //CI.configuration.lastImportDir = m_textPath;
