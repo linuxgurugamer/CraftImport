@@ -1,6 +1,6 @@
 {
     "NAME": "CraftImport",
-    "URL": "https://raw.githubusercontent.com/linuxgurugamer/CraftImport/master/craftimport.version",
+    "URL": "http://ksp.spacetux.net/avc/craftimport",
     "DOWNLOAD": "https://github.com/linuxgurugamer/CraftImport/releases",
     "GITHUB": {
         "USERNAME": "linuxgurugamer",
@@ -10,21 +10,21 @@
         "MAJOR": 0,
         "MINOR": 8,
         "PATCH": 11,
-        "BUILD": 2
+        "BUILD": 3
     },
     "KSP_VERSION": {
         "MAJOR": 1,
-        "MINOR": 4,
+        "MINOR": 5,
         "PATCH": 1
     },
     "KSP_VERSION_MIN": {
         "MAJOR": 1,
-        "MINOR": 4,
+        "MINOR": 5,
         "PATCH": 1
     },
     "KSP_VERSION_MAX": {
         "MAJOR": 1,
-        "MINOR": 4,
+        "MINOR": 5,
         "PATCH": 99
     }
 }

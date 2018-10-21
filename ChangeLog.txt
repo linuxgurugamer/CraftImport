@@ -59,3 +59,6 @@
 	Updated version info for all 1.4
 	Updated toolbarControl usage to use registration
 	Removed all Blizzy options lines
+
+0.8.11.3
+	Version bump for 1.5 rebuild
