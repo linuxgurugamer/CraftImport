@@ -1,9 +1,6 @@
-﻿
-
-using System;
+﻿using System;
 using UnityEngine;
-//using KSP.IO;
-using KSP.UI.Screens;
+
 
 //using System.Globalization;
 
@@ -17,35 +14,11 @@ namespace CraftImport
 
 		public const String TITLE = "Craft Import";
 
-		//			public Configuration configuration = Configuration.Instance;
-		//			public static AS Instance { get; private set;}
-
-		//		private float snapshotInterval = 5.0f;
-
-
-		//public static bool changeCallbacks;
-
 		public /*static*/ Configuration configuration = null;
-//		public static KeyCode activeKeycode;
-//		static private UICLASS uiVisiblity;
+
 		public MainMenuGui gui = null;
 
 
-		/*
-		 * static CI ()
-		{
-		}
-*/
-//		public CI ()
-//		{
-//			Log.Info ("New instance of Craft Import: CI constructor");
-//		}
-
-//		public void Awake ()
-//		{
-//			uiVisiblity = new UICLASS ();
-//			uiVisiblity.Awake ();
-//		}
 
 		public void Start ()
 		{
@@ -67,7 +40,6 @@ namespace CraftImport
 
 			}
 
-			configuration.BlizzyToolbarIsAvailable = ToolbarManager.ToolbarAvailable;
 
         }
 
@@ -86,7 +58,6 @@ namespace CraftImport
 		{
 			Log.Info ("destroying CraftImport");
 
-//			uiVisiblity.OnDestroy();
 			if (InputLockManager.GetControlLock ("CraftImportLock") != ControlTypes.None) {
 				InputLockManager.RemoveControlLock ("CraftImportLock");
 			}
@@ -94,7 +65,6 @@ namespace CraftImport
             MainMenuGui.Instance.toolbarControl.OnDestroy();
             Destroy(MainMenuGui.Instance.toolbarControl);
 
-            //	DelToolbarButton ();
             configuration.Save ();
 		}
 

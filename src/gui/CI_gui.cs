@@ -3,9 +3,6 @@ using System.IO;
 using System.Collections.Generic;
 using UnityEngine;
 using System.Text.RegularExpressions;
-using System.Text;
-using System.Net;
-using System.Linq;
 using SimpleJSON;
 using KSP.UI.Screens;
 using KSP.Localization;
@@ -15,19 +12,12 @@ using ClickThroughFix;
 
 namespace CraftImport
 {
-    //	[WindowInitials(Caption="Craft Import",
-    //		Visible=false,
-    //		DragEnabled=true,
-    //		TooltipsEnabled=true,
-    //		WindowMoveEventsEnabled=true)]
+
     public class MainMenuGui : MonoBehaviour
-    //	public class MainMenuGui : MonoBehaviourWindowPlus
     {
         public CI thisCI = null;
         internal static  MainMenuGui Instance;
-        //		internal override void DrawWindow(int id)
-        //		{
-        //		}
+
         private const int WIDTH = 500;
         private const int HEIGHT = 400;
         private const int BR_WIDTH = 600;
@@ -36,23 +26,12 @@ namespace CraftImport
         private Rect bounds = new Rect(Screen.width / 2 - WIDTH / 2, Screen.height / 2 - HEIGHT / 2, WIDTH, HEIGHT);
         private /* volatile*/ bool visible = false;
         bool resetWinPos = false;
-        // Stock APP Toolbar - Stavell
-        //public /*static*/ ApplicationLauncherButton CI_Button = null;
         public bool stockToolBarcreated = false;
-
-
         internal ToolbarControl toolbarControl = null;
-
-
         public static Texture2D CI_button_img = new Texture2D(38, 38, TextureFormat.ARGB32, false);
-
-        //private bool CI_Texture_Load = false;
-
         private bool cfgWinData = false;
-        //		private static bool newScreenshotAtIntervals = true;
         private static bool blizzyToolbarInstalled = false;
         private static bool newUseBlizzyToolbar;
-        //private static bool newShowDrives;
         private static bool saveInSandbox = false;
         private static bool saveInShipDefault = true;
         private static bool saveInVAB = false;
@@ -66,7 +45,6 @@ namespace CraftImport
         private static bool subassembly = false;
         bool jpgToDelete = false;
         string convertedJpg = "";
-        //private static string newCkanExecPath = "";
 
         string instructions = "";
 
@@ -170,7 +148,7 @@ namespace CraftImport
             {
                 saveDir = FileOperations.ROOT_PATH + "saves/" + HighLogic.SaveFolder + "/Ships";
             }
-            //string saveDir = KSPUtil.ApplicationRootPath + sandbox + HighLogic.SaveFolder + "/ships";
+
             saveFile = "";
 
             string shipName = null;

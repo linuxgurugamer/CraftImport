@@ -1,8 +1,5 @@
 ﻿using UnityEngine;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 
 
 namespace CraftImport
@@ -30,8 +27,7 @@ namespace CraftImport
 		public float vabPitch, sphPitch;
 		public float vabHeading, sphHeading;
 		public float vabFov, sphFov;
-
-		internal Boolean BlizzyToolbarIsAvailable = false;
+  
 
 		public Color backgroundcolor; 
 
