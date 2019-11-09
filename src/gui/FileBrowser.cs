@@ -49,7 +49,7 @@ namespace CraftImport
 				} else if (hover && callback != null && Event.current.type == EventType.MouseDown && Event.current.clickCount == 2) {
 					callback (i);
 					Event.current.Use ();
-				} else if (Event.current.type == EventType.repaint) {
+				} else if (Event.current.type == EventType.Repaint) {
 					elementStyle.Draw (elementRect, list [i], hover, false, i == selected, false);
 				}
 			}
@@ -82,7 +82,7 @@ namespace CraftImport
 				} else if (hover && callback != null && Event.current.type == EventType.MouseDown && Event.current.clickCount == 2) {
 					callback (i);
 					Event.current.Use ();
-				} else if (Event.current.type == EventType.repaint) {
+				} else if (Event.current.type == EventType.Repaint) {
 					elementStyle.Draw (elementRect, list [i], hover, false, i == selected, false);
 				}
 			}

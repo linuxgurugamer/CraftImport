@@ -1,4 +1,6 @@
-﻿0.1.0		initial release
+﻿ChangeLog
+
+0.1.0		initial release
 
 0.2.0		Fixed bug where showDrives wasn't being honored, so that drives were always being shown
 0.3.0		Removed unnecessary dialog for file selection
@@ -67,3 +69,7 @@
 	Updated AssemblyVersion.tt for location-independent builds
 	Deleted old code
 	Deleted Toolbarwrapper.cs
+
+0.9.0
+	Added InstallChecker
+	Updated for KSP 1.8
